@@ -52,10 +52,21 @@ class GameState:
         elif move.piece_moved == "bK":
             self.b_king_location = (move.end_row, move.end_col)
 
+        #Handle En Passant Move
+        if move.is_en_passant_move :
+            # Capture the pawn 
+            self.board[move.start_row][move.end_col] = "--"
+
         # Handle pawn promotion (assuming promotion to queen for simplicity)
         if move.is_pawn_promotion:
             self.board[move.end_row][move.end_col] = move.piece_moved[0] + "Q"
 
+        #Update en_passant_possible state
+        if move.piece_moved[1] == "P" and abs(move.start_row - move.end_row) == 2:
+            self.en_passant_possible_square = ( (move.start_row + move.end_row) // 2, move.start_col )
+            print("en passant possible in " + str(self.en_passant_possible_square))
+        else:
+            self.en_passant_possible_square = ()
 
         # Next player's turn
         self.white_to_move = not self.white_to_move
@@ -73,11 +84,20 @@ class GameState:
             elif last_move.piece_moved == "bK":
                 self.b_king_location = (last_move.start_row, last_move.start_col)
             
+            if last_move.is_en_passant_move :
+                self.board[last_move.end_row][last_move.end_col] = "--"
+                self.board[last_move.start_row][last_move.end_col] = last_move.piece_captured
+                self.en_passant_possible_square = (last_move.end_row, last_move.end_col)
+
             self.in_check, self.pinned_pieces, self.checks = self.check_for_pins_and_checks()
             self.white_to_move = not self.white_to_move
 
+
+
     def get_all_valid_moves(self):
+        temp_en_passant_possible_square = self.en_passant_possible_square
         self.in_check, self.pinned_pieces, self.checks = self.check_for_pins_and_checks()
+
 
         if self.white_to_move:
             K_row = self.w_king_location[0]
@@ -127,6 +147,7 @@ class GameState:
             self.is_check_mate = False
             self.is_stale_mate = False
 
+        self.en_passant_possible_square = temp_en_passant_possible_square
         return valid_moves
 
     def is_in_check(self):
@@ -258,20 +279,24 @@ class GameState:
                     moves.append(Move((r, c), (r-2, c), self.board))
 
         # Capture to the left
-        if c-1 >= 0 and self.board[r-1][c-1][0] == "b":
-            if not is_piece_pinned or pin_direction == (-1, -1):
-                moves.append(Move((r, c), (r-1, c-1), self.board))
+        if c-1 >= 0:
+            if self.board[r-1][c-1][0] == "b":
+                if not is_piece_pinned or pin_direction == (-1, -1):
+                    moves.append(Move((r, c), (r-1, c-1), self.board))
+            # Handle En Passant
             elif (r-1, c-1) == self.en_passant_possible_square:
-                moves.append(Move((r, c), (r-1, c-1), self.board, en_passant_possible=True))
-
-
+                if not is_piece_pinned or pin_direction == (-1, -1):
+                    moves.append(Move((r, c), (r-1, c-1), self.board, is_en_passant_move=True))
 
         # Capture to the right
-        if c+1 <= 7 and self.board[r-1][c+1][0] == "b":
-            if not is_piece_pinned or pin_direction == (-1, 1):
-                moves.append(Move((r, c), (r-1, c+1), self.board))
-
-        #Generate the en passant move
+        if c+1 <= 7:
+            if self.board[r-1][c+1][0] == "b":
+                if not is_piece_pinned or pin_direction == (-1, 1):
+                    moves.append(Move((r, c), (r-1, c+1), self.board))
+            # Handle En Passant
+            elif (r-1, c+1) == self.en_passant_possible_square:
+                if not is_piece_pinned or pin_direction == (-1, 1):
+                    moves.append(Move((r, c), (r-1, c+1), self.board, is_en_passant_move=True))
         
 
     def _get_black_pawn_moves(self, r, c, moves, is_piece_pinned, pin_direction):
@@ -285,15 +310,24 @@ class GameState:
                     moves.append(Move((r, c), (r+2, c), self.board))
 
         # Capture to the left
-        if c-1 >= 0 and self.board[r+1][c-1][0] == "w":
-            if not is_piece_pinned or pin_direction == (1, -1):
-                moves.append(Move((r, c), (r+1, c-1), self.board))
+        if c-1 >= 0:
+            if self.board[r+1][c-1][0] == "w":
+                if not is_piece_pinned or pin_direction == (1, -1):
+                    moves.append(Move((r, c), (r+1, c-1), self.board))
+            # Handle En Passant
+            elif (r+1, c-1) == self.en_passant_possible_square:
+                if not is_piece_pinned or pin_direction == (1, -1):
+                    moves.append(Move((r, c), (r+1, c-1), self.board, is_en_passant_move=True))
 
         # Capture to the right
-        if c+1 <= 7 and self.board[r+1][c+1][0] == "w":
-            if not is_piece_pinned or pin_direction == (1, 1):
-                moves.append(Move((r, c), (r+1, c+1), self.board))
-
+        if c+1 <= 7:
+            if self.board[r+1][c+1][0] == "w":
+                if not is_piece_pinned or pin_direction == (1, 1):
+                    moves.append(Move((r, c), (r+1, c+1), self.board))
+            # Handle En Passant
+            elif (r+1, c+1) == self.en_passant_possible_square:
+                if not is_piece_pinned or pin_direction == (1, 1):
+                    moves.append(Move((r, c), (r+1, c+1), self.board, is_en_passant_move=True))
 
     def get_rook_moves(self, row, col, moves):
         """
@@ -341,8 +375,7 @@ class GameState:
                 self.pinned_pieces.remove(self.pinned_pieces[i])
                 break
 
-        knight_moves = ((-2, -1), (-2, 1), (-1, 2), (1, 2), (2, -1), (2, 1), (-1, -2),
-                        (1, -2))  # up/left up/right right/up right/down down/left down/right left/up left/down
+        knight_moves = ((-2, -1), (-2, 1), (-1, 2), (1, 2), (2, -1), (2, 1), (-1, -2), (1, -2))  # up/left up/right right/up right/down down/left down/right left/up left/down
         ally_color = "w" if self.white_to_move else "b"
         for move in knight_moves:
             end_row = row + move[0]
@@ -422,7 +455,7 @@ class GameState:
 
 
 class Move: 
-    def __init__(self, from_square, end_square, board_state, en_passant_possible = False):
+    def __init__(self, from_square, end_square, board_state, is_en_passant_move = False):
         self.start_row = from_square[0]
         self.start_col = from_square[1]
         self.end_row = end_square[0]
@@ -436,7 +469,9 @@ class Move:
         self.is_pawn_promotion = (self.piece_moved == "wP" and self.end_row == 0) or (self.piece_moved == "bP" and self.end_row == 7)
         
         #En Passant : If pawn is moved to en passant square
-        self.is_en_passant_move = en_passant_possible
+        self.is_en_passant_move = is_en_passant_move
+        if self.is_en_passant_move:
+            self.piece_captured = "wP" if self.piece_moved == "bP" else "bP"
 
         #Generate a specific id for a move
         self.move_id = self.start_row * 1000 + self.start_col * 100 + self.end_row * 10 + self.end_col

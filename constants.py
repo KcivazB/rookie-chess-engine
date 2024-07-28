@@ -15,61 +15,68 @@ THEME = "base"
 
 # Themes dictionary
 THEMES = {
-    # Customize themes for highlights or anything
     "base": {
         "white": p.Color("white"),
         "black": p.Color("gray"),
         "highlighted": p.Color("purple"),
-        "possible_moves": p.Color("purple"),
+        "possible_moves": p.Color("violet"),
+        "capture_color" : p.Color("red"),
         "set": "staunty"
     },
     "blue": {
-        "white": p.Color("deepskyblue"),
-        "black": p.Color("dodgerblue4"),
+        "white": p.Color("lightblue"),
+        "black": p.Color("navy"),
         "highlighted": p.Color("gold"),
-        "possible_moves": p.Color("gold"),
+        "possible_moves": p.Color("yellow"),
+        "capture_color" : p.Color("red"),
         "set": "anarcandy"
     },
     "green": {
-        "white": p.Color("seagreen1"),
-        "black": p.Color("seagreen3"),
+        "white": p.Color("honeydew"),
+        "black": p.Color("darkgreen"),
         "highlighted": p.Color("yellow"),
-        "possible_moves": p.Color("yellow"),
+        "possible_moves": p.Color("lightgreen"),
+        "capture_color" : p.Color("red"),
         "set": "riohacha"
     },
     "red": {
-        "white": p.Color("indianred1"),
-        "black": p.Color("indianred3"),
+        "white": p.Color("lightcoral"),
+        "black": p.Color("darkred"),
         "highlighted": p.Color("orange"),
-        "possible_moves": p.Color("orange"),
+        "possible_moves": p.Color("salmon"),
+        "capture_color" : p.Color("red"),
         "set": "maestro"
     },
     "light_pink": {
-        "white": p.Color("lightpink1"),
-        "black": p.Color("palevioletred3"),
+        "white": p.Color("mistyrose"),
+        "black": p.Color("palevioletred"),
         "highlighted": p.Color("lightcoral"),
-        "possible_moves": p.Color("lightcoral"),
+        "possible_moves": p.Color("lightpink"),
+        "capture_color" : p.Color("red"),
         "set": "spatial"
     },
     "brown": {
-        "white": p.Color("beige"),
-        "black": p.Color("brown"),
+        "white": p.Color("wheat"),
+        "black": p.Color("saddlebrown"),
         "highlighted": p.Color("gold"),
-        "possible_moves": p.Color("gold"),
+        "possible_moves": p.Color("tan"),
+        "capture_color" : p.Color("red"),
         "set": "kiwen-suwi"
     },
     "dark": {
-        "white": p.Color("darkgray"),
+        "white": p.Color("lightgray"),
         "black": p.Color("black"),
         "highlighted": p.Color("red"),
-        "possible_moves": p.Color("red"),
+        "possible_moves": p.Color("darkred"),
+        "capture_color" : p.Color("red"),
         "set": "monarchy"
     },
     "neon": {
         "white": p.Color("cyan"),
         "black": p.Color("magenta"),
         "highlighted": p.Color("lime"),
-        "possible_moves": p.Color("lime"),
+        "possible_moves": p.Color("lightgreen"),
+        "capture_color" : p.Color("red"),
         "set": "pixel"
     }
 }

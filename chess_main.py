@@ -50,11 +50,11 @@ def main():
 
     while running : 
         if gs.is_stale_mate : 
-            print ("White" if gs.white_to_move else "Black"+ " is stale mate")
-            running = False
+            print ("White is stale mate" if gs.white_to_move else "Black  is stale mate")
+            
         if gs.is_check_mate : 
-            print ("White" if gs.white_to_move else "Black"+ " is check mate")
-            running = False
+            print ("White is check mate" if gs.white_to_move else "Black is check mate")
+
         for e in p.event.get():
             if e.type == p.QUIT :
                 running = False
@@ -106,13 +106,13 @@ Responsible for all graphics within game state
 def draw_game_state(screen, gs, square_selected, valid_moves_for_selected_piece):
 
     # Add piece hilighting or move suggestions
-    draw_board_squares(screen, square_selected, valid_moves_for_selected_piece) # Draw the board's squares 
+    draw_board_squares(screen, gs, square_selected, valid_moves_for_selected_piece,) # Draw the board's squares 
     draw_pieces(screen, gs) #Draw pieces on those squares
 
 '''
 Draw the squares on the board
 '''
-def draw_board_squares(screen, selected_square, valid_moves_for_selected_piece): 
+def draw_board_squares(screen, gs, selected_square, valid_moves_for_selected_piece): 
     colors = [THEMES[THEME]["white"], THEMES[THEME]["black"]]
     for row in range (DIMENSION): 
         for col in range (DIMENSION):
@@ -120,19 +120,29 @@ def draw_board_squares(screen, selected_square, valid_moves_for_selected_piece):
             p.draw.rect(screen, color, p.Rect(col * SQ_SIZE, row * SQ_SIZE, SQ_SIZE, SQ_SIZE))
             if selected_square and (row, col) == selected_square:
                 p.draw.rect(screen, THEMES[THEME]["highlighted"], p.Rect(col * SQ_SIZE, row * SQ_SIZE, SQ_SIZE, SQ_SIZE))
-            elif (row, col) in valid_moves_for_selected_piece:
+            elif (row, col) in valid_moves_for_selected_piece:                    
+
                 # Draw a small circle of opposite color in the middle of the square
                 opposite_color = colors[1] if color == colors[0] else colors[0]
                 center_x = col * SQ_SIZE + SQ_SIZE // 2
                 center_y = row * SQ_SIZE + SQ_SIZE // 2
                 radius = SQ_SIZE // 10  # Adjust the radius as needed
                 p.draw.circle(screen, opposite_color, (center_x, center_y), radius)
-                
-                # Add a coloured transparent overlay for valid moves
-                s = p.Surface((SQ_SIZE, SQ_SIZE))
-                s.set_alpha(100)  # transparency value -> 0: transparent, 255: opaque
-                s.fill(THEMES[THEME]["possible_moves"])  # theme color with transparency
-                screen.blit(s, (col * SQ_SIZE, row * SQ_SIZE))
+
+                # If the square is not empty, then move is a capture. -> Highlight the square in another color
+                if gs.board[row][col] != "--":
+                    # Add a coloured transparent overlay for valid moves
+                    s = p.Surface((SQ_SIZE, SQ_SIZE))
+                    s.set_alpha(100)  # transparency value -> 0: transparent, 255: opaque
+                    s.fill(THEMES[THEME]["capture_color"])  # theme color with transparency
+                    screen.blit(s, (col * SQ_SIZE, row * SQ_SIZE))
+
+                else:
+                    # Add a coloured transparent overlay for valid moves
+                    s = p.Surface((SQ_SIZE, SQ_SIZE))
+                    s.set_alpha(100)  # transparency value -> 0: transparent, 255: opaque
+                    s.fill(THEMES[THEME]["possible_moves"])  # theme color with transparency
+                    screen.blit(s, (col * SQ_SIZE, row * SQ_SIZE))
 
 
 
