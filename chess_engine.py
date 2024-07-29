@@ -282,8 +282,8 @@ class GameState:
                     pawn_promotion = True
                 moves.append(Move((r, c), (r + move_sign, c), self.board, is_pawn_promotion = True))
                 # Two squares forward move from the base rank
-                if r == 6 and self.board[r-2][c] == "--":
-                    moves.append(Move((r, c), (r-2, c), self.board))
+                if r == 6 and self.board[r + 2 * move_sign][c] == "--":
+                    moves.append(Move((r, c), (r + 2 * move_sign, c), self.board))
 
         # Capture to the left
         if c-1 >= 0:
@@ -291,9 +291,9 @@ class GameState:
                 if not is_piece_pinned or pin_direction == (move_sign, -1):
                     if r + move_sign == back_row :
                         pawn_promotion = True
-                    moves.append(Move((r, c), (r + move_sign, c-1), self.board, is_pawn_promotion = True))
+                    moves.append(Move((r, c), (r + move_sign, c-1), self.board, is_pawn_promotion = pawn_promotion))
             # Handle En Passant
-            elif (r-1, c-1) == self.en_passant_possible_square:
+            elif (r + move_sign, c-1) == self.en_passant_possible_square:
                 if not is_piece_pinned or pin_direction == (move_sign, -1):
                     moves.append(Move((r, c), (r + move_sign, c-1), self.board, is_en_passant = True))
 
@@ -303,7 +303,7 @@ class GameState:
                 if not is_piece_pinned or pin_direction == (move_sign, 1):
                     if r + move_sign == back_row :
                         pawn_promotion = True
-                    moves.append(Move((r, c), (r+move_sign, c+1), self.board, is_pawn_promotion = True))
+                    moves.append(Move((r, c), (r+move_sign, c+1), self.board, is_pawn_promotion = pawn_promotion))
                 
             # Handle En Passant
             elif (r + move_sign, c+1) == self.en_passant_possible_square:
