@@ -1,6 +1,7 @@
 import pygame as p
 import chess_engine
 from constants import DIMENSION, IMAGE_DIR, SQ_SIZE, PIECES, IMAGES, THEMES, THEME, WIDTH, HEIGHT, MAX_FPS
+import smart_move_finder
 import cairosvg
 import io
 import argparse
@@ -30,7 +31,6 @@ def main(fen):
     gs = chess_engine.GameState(fen)
     valid_moves = gs.get_all_valid_moves()
     move_was_made = False
-    # animate = False
     square_selected = ()
     player_clicks = []
 
@@ -40,12 +40,18 @@ def main(fen):
 
     is_over = gs.is_check_mate or gs.is_stale_mate
 
+    is_white_human = True # True if white is a human, false if it's an AI -> TODO set it to int for level handling
+    is_black_human = False # True if black is a human, false if it's an AI -> TODO set it to int for level handling
+
     while running:
+        is_human_turn = (gs.white_to_move and is_white_human) or (not gs.white_to_move and is_black_human) # Determine if it's an human turn to play
+
+
         for e in p.event.get():
             if e.type == p.QUIT:
                 running = False
             elif e.type == p.MOUSEBUTTONDOWN:
-                if not is_over :
+                if not is_over and is_human_turn: # IF game is not over and Human is playing
                     location = p.mouse.get_pos()
                     col = location[0] // SQ_SIZE
                     row = location[1] // SQ_SIZE
@@ -63,7 +69,6 @@ def main(fen):
                             if move == valid_moves[i]:
                                 gs.make_move(valid_moves[i])
                                 move_was_made = True
-                                # animate = True
                                 square_selected = ()
                                 player_clicks = []
                                 valid_moves_for_selected_piece = []
@@ -80,16 +85,22 @@ def main(fen):
                     gs = chess_engine.GameState(fen)
                     valid_moves = gs.get_all_valid_moves()
                     move_was_made = False
-                    # animate = False
                     square_selected = ()
                     player_clicks = []
 
+
+        
+        #AI MOVE FINDER LOGIC
+        if not is_over:
+            if not is_human_turn:
+                if valid_moves:
+                    smart_move = smart_move_finder.find_random_moves(valid_moves)
+                    gs.make_move(smart_move)
+                    move_was_made = True
+                
         if move_was_made:
-            # if animate:
-            #     animate_move(gs.move_log[-1], screen, gs, clock)
             valid_moves = gs.get_all_valid_moves()
             move_was_made = False
-            # animate = False
 
         draw_game_state(screen, gs, square_selected, valid_moves_for_selected_piece)
 
@@ -157,38 +168,6 @@ def highlight_square_and_squares_moves(screen, gs, row, col, selected_square, va
             s.set_alpha(100)
             s.fill(THEMES[THEME]["possible_moves"])
             screen.blit(s, (col * SQ_SIZE, row * SQ_SIZE))
-
-'''
-Animate the piece movement from start to end
-'''
-# def animate_move(move, screen, gs, clock):
-#     colors = [THEMES[THEME]["white"], THEMES[THEME]["black"]]
-#     delta_x = move.end_col - move.start_col
-#     delta_y = move.end_row - move.start_row
-#     frames_per_square = 5
-#     frame_count = (abs(delta_x) + abs(delta_y)) * frames_per_square
-
-#     for frame in range(frame_count + 1):
-#         row, col = move.start_row, move.start_col
-#         x = col * SQ_SIZE + delta_x * SQ_SIZE * frame / frame_count
-#         y = row * SQ_SIZE + delta_y * SQ_SIZE * frame / frame_count
-        
-#         draw_board_squares(screen, gs, (), [])
-#         draw_pieces(screen, gs)
-
-#         color = colors[(move.end_row + move.end_col) % 2]
-#         end_square = p.Rect(move.end_col * SQ_SIZE, move.end_row * SQ_SIZE, SQ_SIZE, SQ_SIZE)
-#         p.draw.rect(screen, color, end_square)
-#         if move.piece_captured != "--":
-#             screen.blit(IMAGES[move.piece_captured], end_square)
-
-#         piece = move.piece_moved
-#         if piece != "--":
-#             moving_piece = p.transform.scale(IMAGES[piece], (SQ_SIZE, SQ_SIZE))
-#             screen.blit(moving_piece, p.Rect(x, y, SQ_SIZE, SQ_SIZE))
-
-#         p.display.flip()
-#         clock.tick(MAX_FPS)
 
 '''
 Draw the pieces on the board depending on the current GameState.board

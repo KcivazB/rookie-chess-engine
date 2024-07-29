@@ -145,7 +145,6 @@ class GameState:
         #Update en_passant_possible state
         if move.piece_moved[1] == "P" and abs(move.start_row - move.end_row) == 2:
             self.en_passant_possible_square = ( (move.start_row + move.end_row) // 2, move.start_col )
-            print("en passant possible in " + str(self.en_passant_possible_square))
         else:
             self.en_passant_possible_square = ()
 
@@ -240,9 +239,6 @@ class GameState:
         temp_en_passant_possible_square = self.en_passant_possible_square
         temp_castle_rights = CastleRights(self.current_castling_rights.wKs, self.current_castling_rights.wQs,
                                           self.current_castling_rights.bKs, self.current_castling_rights.bQs)
-        for log in self.castling_rights_logs:
-            print (log.wKs, log.wQs, log.bKs, log.bQs, end=", ")
-        print()
 
         self.in_check, self.pinned_pieces, self.checks = self.check_for_pins_and_checks()
         valid_moves = []
