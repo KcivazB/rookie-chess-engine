@@ -93,7 +93,7 @@ def main(fen):
                     gs.undo_last_move()
                     move_was_made = True
 
-        if move_was_made : 
+        if move_was_made :
             valid_moves = gs.get_all_valid_moves()
             move_was_made = False
 
@@ -119,33 +119,41 @@ def draw_board_squares(screen, gs, selected_square, valid_moves_for_selected_pie
         for col in range (DIMENSION):
             color = colors[(row + col) % 2]
             p.draw.rect(screen, color, p.Rect(col * SQ_SIZE, row * SQ_SIZE, SQ_SIZE, SQ_SIZE))
-            if selected_square and (row, col) == selected_square:
-                p.draw.rect(screen, THEMES[THEME]["highlighted"], p.Rect(col * SQ_SIZE, row * SQ_SIZE, SQ_SIZE, SQ_SIZE))
-            elif (row, col) in valid_moves_for_selected_piece:                    
+            highlight_square_and_squares_moves(screen, gs, row, col, selected_square, valid_moves_for_selected_piece)
 
-                # Draw a small circle of opposite color in the middle of the square
-                opposite_color = colors[1] if color == colors[0] else colors[0]
-                center_x = col * SQ_SIZE + SQ_SIZE // 2
-                center_y = row * SQ_SIZE + SQ_SIZE // 2
-                radius = SQ_SIZE // 10  # Adjust the radius as needed
-                p.draw.circle(screen, opposite_color, (center_x, center_y), radius)
+'''
+HIGHLIGHT THE SQUARES FOR SELECTED PIECE AND ITS MOVES
+'''
+def highlight_square_and_squares_moves(screen, gs, row, col, selected_square, valid_moves_for_selected_piece ):
+    colors = [THEMES[THEME]["white"], THEMES[THEME]["black"]]
+    color = colors[(row + col) % 2]
 
-                # If the square is not empty, then move is a capture. -> Highlight the square in another color
-                if gs.board[row][col] != "--":
-                    # Add a coloured transparent overlay for valid moves
-                    s = p.Surface((SQ_SIZE, SQ_SIZE))
-                    s.set_alpha(100)  # transparency value -> 0: transparent, 255: opaque
-                    s.fill(THEMES[THEME]["capture_color"])  # theme color with transparency
-                    screen.blit(s, (col * SQ_SIZE, row * SQ_SIZE))
+    if selected_square and (row, col) == selected_square:
+            selected_square_rect = p.Rect(col * SQ_SIZE, row * SQ_SIZE, SQ_SIZE, SQ_SIZE)
+            p.draw.rect(screen, THEMES[THEME]["highlighted"], selected_square_rect)
+    if (row, col) in valid_moves_for_selected_piece:                    
 
-                else:
-                    # Add a coloured transparent overlay for valid moves
-                    s = p.Surface((SQ_SIZE, SQ_SIZE))
-                    s.set_alpha(100)  # transparency value -> 0: transparent, 255: opaque
-                    s.fill(THEMES[THEME]["possible_moves"])  # theme color with transparency
-                    screen.blit(s, (col * SQ_SIZE, row * SQ_SIZE))
+        # Draw a small circle of opposite color in the middle of the square
+        opposite_color = colors[1] if color == colors[0] else colors[0]
+        center_x = col * SQ_SIZE + SQ_SIZE // 2
+        center_y = row * SQ_SIZE + SQ_SIZE // 2
+        radius = SQ_SIZE // 10  # Adjust the radius as needed
+        p.draw.circle(screen, opposite_color, (center_x, center_y), radius)
 
+        # If the square is not empty, then move is a capture. -> Highlight the square in another color
+        if gs.board[row][col] != "--":
+            # Add a coloured transparent overlay for valid moves
+            s = p.Surface((SQ_SIZE, SQ_SIZE))
+            s.set_alpha(100)  # transparency value -> 0: transparent, 255: opaque
+            s.fill(THEMES[THEME]["capture_color"])  # theme color with transparency
+            screen.blit(s, (col * SQ_SIZE, row * SQ_SIZE))
 
+        else:
+            # Add a coloured transparent overlay for valid moves
+            s = p.Surface((SQ_SIZE, SQ_SIZE))
+            s.set_alpha(100)  # transparency value -> 0: transparent, 255: opaque
+            s.fill(THEMES[THEME]["possible_moves"])  # theme color with transparency
+            screen.blit(s, (col * SQ_SIZE, row * SQ_SIZE))
 
 '''
 Draw the pieces on the board depending on the current GameState.board
@@ -156,7 +164,8 @@ def draw_pieces(screen, game_state):
         for col in range (DIMENSION):
             piece = board[row][col]
             if piece != "--" : 
-                screen.blit(IMAGES[piece], p.Rect(col * SQ_SIZE, row * SQ_SIZE, SQ_SIZE, SQ_SIZE))
+                piece_square = p.Rect(col * SQ_SIZE, row * SQ_SIZE, SQ_SIZE, SQ_SIZE)
+                screen.blit(IMAGES[piece], piece_square)
 
 
 if __name__ == "__main__":

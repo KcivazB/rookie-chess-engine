@@ -11,7 +11,7 @@ MAX_FPS = 15
 IMAGE_DIR = "images"
 
 # Initial theme
-THEME = "base"
+THEME = "sunset"
 
 # Themes dictionary
 THEMES = {
@@ -19,64 +19,80 @@ THEMES = {
         "white": p.Color("white"),
         "black": p.Color("gray"),
         "highlighted": p.Color("purple"),
-        "possible_moves": p.Color("violet"),
-        "capture_color" : p.Color("red"),
+        "possible_moves": p.Color("purple1"),
+        "capture_color": p.Color("seagreen2"),
         "set": "staunty"
     },
-    "blue": {
-        "white": p.Color("lightblue"),
-        "black": p.Color("navy"),
-        "highlighted": p.Color("gold"),
-        "possible_moves": p.Color("yellow"),
-        "capture_color" : p.Color("red"),
-        "set": "anarcandy"
+    "sunset": {
+        "white": p.Color("lightgoldenrodyellow"),
+        "black": p.Color("sienna"),
+        "highlighted": p.Color("coral"),
+        "possible_moves": p.Color("darkorange1"),
+        "capture_color": p.Color("firebrick"),
+        "set": "staunty"
     },
-    "green": {
+    "forest": {
         "white": p.Color("honeydew"),
-        "black": p.Color("darkgreen"),
-        "highlighted": p.Color("yellow"),
-        "possible_moves": p.Color("lightgreen"),
-        "capture_color" : p.Color("red"),
-        "set": "riohacha"
+        "black": p.Color("forestgreen"),
+        "highlighted": p.Color("darkolivegreen"),
+        "possible_moves": p.Color("limegreen"),
+        "capture_color": p.Color("darkred"),
+        "set": "staunty"
     },
-    "red": {
-        "white": p.Color("lightcoral"),
-        "black": p.Color("darkred"),
-        "highlighted": p.Color("orange"),
-        "possible_moves": p.Color("salmon"),
-        "capture_color" : p.Color("red"),
-        "set": "maestro"
+    "ocean": {
+        "white": p.Color("azure"),
+        "black": p.Color("midnightblue"),
+        "highlighted": p.Color("dodgerblue"),
+        "possible_moves": p.Color("deepskyblue"),
+        "capture_color": p.Color("crimson"),
+        "set": "staunty"
     },
-    "light_pink": {
-        "white": p.Color("mistyrose"),
-        "black": p.Color("palevioletred"),
-        "highlighted": p.Color("lightcoral"),
-        "possible_moves": p.Color("lightpink"),
-        "capture_color" : p.Color("red"),
-        "set": "spatial"
-    },
-    "brown": {
+    "desert": {
         "white": p.Color("wheat"),
-        "black": p.Color("saddlebrown"),
-        "highlighted": p.Color("gold"),
-        "possible_moves": p.Color("tan"),
-        "capture_color" : p.Color("red"),
-        "set": "kiwen-suwi"
+        "black": p.Color("peru"),
+        "highlighted": p.Color("sandybrown"),
+        "possible_moves": p.Color("goldenrod"),
+        "capture_color": p.Color("brown"),
+        "set": "staunty"
     },
-    "dark": {
-        "white": p.Color("lightgray"),
+    "night": {
+        "white": p.Color("lightgrey"),
         "black": p.Color("black"),
-        "highlighted": p.Color("red"),
-        "possible_moves": p.Color("darkred"),
-        "capture_color" : p.Color("red"),
-        "set": "monarchy"
+        "highlighted": p.Color("darkslateblue"),
+        "possible_moves": p.Color("slateblue"),
+        "capture_color": p.Color("red"),
+        "set": "staunty"
     },
-    "neon": {
-        "white": p.Color("cyan"),
-        "black": p.Color("magenta"),
-        "highlighted": p.Color("lime"),
-        "possible_moves": p.Color("lightgreen"),
-        "capture_color" : p.Color("red"),
-        "set": "pixel"
+    "spring": {
+        "white": p.Color("mintcream"),
+        "black": p.Color("mediumseagreen"),
+        "highlighted": p.Color("mediumspringgreen"),
+        "possible_moves": p.Color("springgreen"),
+        "capture_color": p.Color("mediumvioletred"),
+        "set": "staunty"
+    },
+    "autumn": {
+        "white": p.Color("oldlace"),
+        "black": p.Color("saddlebrown"),
+        "highlighted": p.Color("darkorange"),
+        "possible_moves": p.Color("orangered"),
+        "capture_color": p.Color("maroon"),
+        "set": "staunty"
+    },
+    "pastel": {
+        "white": p.Color("lavenderblush"),
+        "black": p.Color("palevioletred"),
+        "highlighted": p.Color("lightpink"),
+        "possible_moves": p.Color("pink"),
+        "capture_color": p.Color("deeppink"),
+        "set": "staunty"
+    },
+    "grayscale": {
+        "white": p.Color("gainsboro"),
+        "black": p.Color("dimgray"),
+        "highlighted": p.Color("darkgray"),
+        "possible_moves": p.Color("lightgray"),
+        "capture_color": p.Color("black"),
+        "set": "staunty"
     }
 }
