@@ -3,6 +3,7 @@ import chess_engine
 from constants import DIMENSION, IMAGE_DIR, SQ_SIZE, PIECES, IMAGES, THEMES, THEME, WIDTH, HEIGHT, MAX_FPS
 import cairosvg
 import io
+import argparse
 
 '''
 Initialize a global dictionary of the images. Called once
@@ -29,13 +30,13 @@ def load_images():
 '''
 The main driver for the code 
 '''
-def main():
+def main(fen):
     p.init() 
     screen = p.display.set_mode((WIDTH, HEIGHT))
     clock = p.time.Clock()
     screen.fill(p.Color("white"))
     
-    gs = chess_engine.GameState()
+    gs = chess_engine.GameState(fen)
 
     valid_moves = gs.get_all_valid_moves()
 
@@ -159,4 +160,8 @@ def draw_pieces(screen, game_state):
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description='Start a chess game with an optional FEN string.')
+    parser.add_argument('--FEN', type=str, help='The FEN string to set up the board.')
+    args = parser.parse_args()
+
+    main(args.FEN)
