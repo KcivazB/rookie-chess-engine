@@ -6,12 +6,12 @@ SQUARES = 8**2
 SQ_SIZE = WIDTH // DIMENSION 
 PIECES = ["wP","wR","wN","wB","wQ","wK","bP","bR","bN","bB","bQ","bK"]
 IMAGES = {}
-MAX_FPS = 15
+MAX_FPS = 60
 
 IMAGE_DIR = "images"
 
 # Initial theme
-THEME = "sunset"
+THEME = "base"
 
 # Themes dictionary
 THEMES = {

@@ -238,8 +238,8 @@ class GameState:
 
     def get_all_valid_moves(self):
         temp_en_passant_possible_square = self.en_passant_possible_square
-        temp_castle_rights = CastleRights(self.current_castling_rights.wKs, self.current_castling_rights.bKs,
-                                          self.current_castling_rights.wQs, self.current_castling_rights.bQs)
+        temp_castle_rights = CastleRights(self.current_castling_rights.wKs, self.current_castling_rights.wQs,
+                                          self.current_castling_rights.bKs, self.current_castling_rights.bQs)
         for log in self.castling_rights_logs:
             print (log.wKs, log.wQs, log.bKs, log.bQs, end=", ")
         print()
