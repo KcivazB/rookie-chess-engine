@@ -11,7 +11,7 @@ MAX_FPS = 60
 IMAGE_DIR = "images"
 
 # Initial theme
-THEME = "base"
+THEME = "ocean"
 
 # Themes dictionary
 THEMES = {

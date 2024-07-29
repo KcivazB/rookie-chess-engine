@@ -46,7 +46,6 @@ def main(fen):
     while running:
         is_human_turn = (gs.white_to_move and is_white_human) or (not gs.white_to_move and is_black_human) # Determine if it's an human turn to play
 
-
         for e in p.event.get():
             if e.type == p.QUIT:
                 running = False
@@ -87,15 +86,14 @@ def main(fen):
                     move_was_made = False
                     square_selected = ()
                     player_clicks = []
-
-
         
         #AI MOVE FINDER LOGIC
         if not is_over:
             if not is_human_turn:
                 if valid_moves:
-                    smart_move = smart_move_finder.find_random_moves(valid_moves)
-                    gs.make_move(smart_move)
+                    ai_smart_move = smart_move_finder.find_best_move(gs, valid_moves)
+
+                    gs.make_move(ai_smart_move)
                     move_was_made = True
                 
         if move_was_made:
