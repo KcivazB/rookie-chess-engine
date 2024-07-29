@@ -601,7 +601,7 @@ class GameState:
     #Generate King Side Castle Moves
     def get_queen_side_castle_moves(self, r, c, moves):
         # Check if squares are empty
-        if self.board[r][c-1] == "--" and self.board[r][c-2] == "--":
+        if self.board[r][c-1] == "--" and self.board[r][c-2] == "--" and self.board[r][c-3] == "--":
             if not self.is_square_under_attack(r, c - 1) and not self.is_square_under_attack(r, c -2):
                 moves.append(Move((r, c), (r, c - 2), self.board, is_castling = True))
 
