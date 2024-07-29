@@ -38,40 +38,38 @@ def main(fen):
     running = True
     valid_moves_for_selected_piece = []
 
-    while running:
-        if gs.is_stale_mate:
-            print("White is stale mate" if gs.white_to_move else "Black is stale mate")
-        if gs.is_check_mate:
-            print("White is check mate" if gs.white_to_move else "Black is check mate")
+    is_over = gs.is_check_mate or gs.is_stale_mate
 
+    while running:
         for e in p.event.get():
             if e.type == p.QUIT:
                 running = False
             elif e.type == p.MOUSEBUTTONDOWN:
-                location = p.mouse.get_pos()
-                col = location[0] // SQ_SIZE
-                row = location[1] // SQ_SIZE
-                if square_selected == (row, col):
-                    square_selected = ()
-                    player_clicks = []
-                    valid_moves_for_selected_piece = []
-                else:
-                    square_selected = (row, col)
-                    player_clicks.append(square_selected)
-                    valid_moves_for_selected_piece = [move.end_square for move in valid_moves if (move.start_row, move.start_col) == square_selected]
-                if len(player_clicks) == 2:
-                    move = chess_engine.Move(player_clicks[0], player_clicks[1], gs.board)
-                    for i in range(len(valid_moves)):
-                        if move == valid_moves[i]:
-                            gs.make_move(valid_moves[i])
-                            move_was_made = True
-                            # animate = True
-                            square_selected = ()
-                            player_clicks = []
-                            valid_moves_for_selected_piece = []
-                    if not move_was_made:
-                        player_clicks = [square_selected]
+                if not is_over :
+                    location = p.mouse.get_pos()
+                    col = location[0] // SQ_SIZE
+                    row = location[1] // SQ_SIZE
+                    if square_selected == (row, col):
+                        square_selected = ()
+                        player_clicks = []
+                        valid_moves_for_selected_piece = []
+                    else:
+                        square_selected = (row, col)
+                        player_clicks.append(square_selected)
                         valid_moves_for_selected_piece = [move.end_square for move in valid_moves if (move.start_row, move.start_col) == square_selected]
+                    if len(player_clicks) == 2:
+                        move = chess_engine.Move(player_clicks[0], player_clicks[1], gs.board)
+                        for i in range(len(valid_moves)):
+                            if move == valid_moves[i]:
+                                gs.make_move(valid_moves[i])
+                                move_was_made = True
+                                # animate = True
+                                square_selected = ()
+                                player_clicks = []
+                                valid_moves_for_selected_piece = []
+                        if not move_was_made:
+                            player_clicks = [square_selected]
+                            valid_moves_for_selected_piece = [move.end_square for move in valid_moves if (move.start_row, move.start_col) == square_selected]
             elif e.type == p.KEYDOWN:
                 if e.key == p.K_BACKSPACE: # If BACKSPACE is pressed, undo last move
                     square_selected = ()
@@ -94,8 +92,26 @@ def main(fen):
             # animate = False
 
         draw_game_state(screen, gs, square_selected, valid_moves_for_selected_piece)
+
+        if gs.is_stale_mate:
+            text = "White is stale mate - Draw game" if gs.white_to_move else "Black is stale mate - Draw game"
+            draw_text_on_screen(screen, text)
+        if gs.is_check_mate:
+            text = "White is check mate" if gs.white_to_move else "Black is check mate"
+            draw_text_on_screen(screen, text)
+
+
         clock.tick(MAX_FPS)
         p.display.flip()
+
+'''
+Draw text on the screen
+'''
+def draw_text_on_screen(screen, text):
+    font = p.font.SysFont("Helvetica", 60, True, False)
+    text_object = font.render(text, 0, THEMES[THEME]["capture_color"])
+    text_location = p.Rect(0, 0, WIDTH, HEIGHT).move( WIDTH // 2 - text_object.get_width() // 2, HEIGHT // 2 - text_object.get_height() // 2 )
+    screen.blit(text_object, text_location)
 
 '''
 Responsible for all graphics within game state
