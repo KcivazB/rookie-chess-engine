@@ -166,6 +166,11 @@ class GameState:
         else :
             self.half_moves_count +=1
 
+        # Check for 75-move rule
+        if self.half_moves_count >= 75:
+            self.is_stale_mate = True  # Set draw flag
+            print("75-move rule reached: Game is a draw.")  # TODO Check what happens after this 
+            return
         #Handle En Passant Move
         if move.is_en_passant_move:
             # Capture the pawn 
@@ -241,6 +246,12 @@ class GameState:
                 else:  # Queen Side Castling
                     self.board[last_move.end_row][last_move.end_col - 2] = self.board[last_move.end_row][last_move.end_col + 1]  # Restore the rook
                     self.board[last_move.end_row][last_move.end_col + 1] = "--"  # Remove the rook from the new position
+
+            # Adjust 75-move rule counter
+            if last_move.piece_moved[1] == "P" or last_move.piece_captured != "--":
+                self.half_moves_count = 0  # Reset counter
+            else:
+                self.half_moves_count -= 1  # Decrement counter
 
             # Restore any other game state variables
             self.in_check, self.pinned_pieces, self.checks = self.check_for_pins_and_checks()
@@ -431,7 +442,6 @@ class GameState:
                     in_check = True
                     checks.append((end_row, end_col, move[0], move[1]))
 
-        print(f"in check : {in_check}, pinned_pieces : {pinned_pieces}, checks : {checks}")
         return in_check, pinned_pieces, checks
 
     '''

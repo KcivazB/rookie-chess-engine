@@ -21,7 +21,7 @@ PIECES = ["wP","wR","wN","wB","wQ","wK","bP","bR","bN","bB","bQ","bK"]
 '''
 AI PART 
 '''
-MAX_DEPTH = 2
+MAX_DEPTH = 3
 
 PIECE_SCORES = {
     "K" : 0,
@@ -39,7 +39,7 @@ STALE_MATE_SCORE = 0
 THEMES PART 
 '''
 # Initial theme
-THEME = "night"
+THEME = "base"
 
 # Themes dictionary
 THEMES = {
