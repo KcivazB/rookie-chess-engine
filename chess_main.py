@@ -30,6 +30,7 @@ def main(fen):
 
     gs = chess_engine.GameState(fen)
     valid_moves = gs.get_all_valid_moves()
+
     move_was_made = False
     square_selected = ()
     player_clicks = []
@@ -40,7 +41,7 @@ def main(fen):
 
     is_over = gs.is_check_mate or gs.is_stale_mate
 
-    is_white_human = True # True if white is a human, false if it's an AI -> TODO set it to int for level handling
+    is_white_human = False # True if white is a human, false if it's an AI -> TODO set it to int for level handling
     is_black_human = False # True if black is a human, false if it's an AI -> TODO set it to int for level handling
 
     while running:
@@ -91,7 +92,7 @@ def main(fen):
         if not is_over:
             if not is_human_turn:
                 if valid_moves:
-                    ai_smart_move = smart_move_finder.find_best_move(gs, valid_moves)
+                    ai_smart_move = smart_move_finder.find_best_move_negamax(gs, valid_moves)
 
                     gs.make_move(ai_smart_move)
                     move_was_made = True
@@ -106,7 +107,7 @@ def main(fen):
             text = "White is stale mate - Draw game" if gs.white_to_move else "Black is stale mate - Draw game"
             draw_text_on_screen(screen, text)
         if gs.is_check_mate:
-            text = "White is check mate" if gs.white_to_move else "Black is check mate"
+            text = "White is check mate - Black won" if gs.white_to_move else "Black is check mate - White won"
             draw_text_on_screen(screen, text)
 
 

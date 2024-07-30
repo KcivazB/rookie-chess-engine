@@ -1,17 +1,45 @@
 import pygame as p
 
+'''
+SCREEN SETTINGS
+'''
 WIDTH = HEIGHT = 1024
 DIMENSION = 8 
 SQUARES = 8**2 
 SQ_SIZE = WIDTH // DIMENSION 
-PIECES = ["wP","wR","wN","wB","wQ","wK","bP","bR","bN","bB","bQ","bK"]
-IMAGES = {}
 MAX_FPS = 60
 
 IMAGE_DIR = "images"
+IMAGES = {}
 
+'''
+CHESS CONSTANTS
+'''
+PIECES = ["wP","wR","wN","wB","wQ","wK","bP","bR","bN","bB","bQ","bK"]
+
+
+'''
+AI PART 
+'''
+MAX_DEPTH = 3
+
+PIECE_SCORES = {
+    "K" : 0,
+    "P" : 1,
+    "R" : 5,
+    "B" : 3,
+    "N" : 3,
+    "Q" : 10
+}
+
+CHECK_MATE_SCORE = 1000
+STALE_MATE_SCORE = 0
+
+'''
+THEMES PART 
+'''
 # Initial theme
-THEME = "ocean"
+THEME = "night"
 
 # Themes dictionary
 THEMES = {
