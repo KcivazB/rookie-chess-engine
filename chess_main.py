@@ -102,6 +102,7 @@ def main(fen):
         if move_was_made:
             valid_moves = gs.get_all_valid_moves()
             move_was_made = False
+            gs.print_self_data()    
 
         draw_game_state(screen, gs, square_selected, valid_moves_for_selected_piece)
 

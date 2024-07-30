@@ -26,7 +26,7 @@ class GameState:
         self.half_moves_count = 0
         self.half_moves_count_log = []  # New log for half moves count
 
-        self.moves_count = 0
+        self.moves_count = 1
 
         self.move_log = []
 
@@ -147,6 +147,11 @@ class GameState:
 
         self.board[move.start_row][move.start_col] = "--"
         self.board[move.end_row][move.end_col] = move.piece_moved
+
+        #Increment moves count on black plays
+        if not self.white_to_move:
+            self.moves_count += 1
+
         self.move_log.append(move)
 
         # Update the king's location if moved
@@ -205,6 +210,10 @@ class GameState:
 
             # Restore the previous half moves count
             self.half_moves_count = self.half_moves_count_log.pop()
+            
+            # Decrement moves_count on whites turns
+            if self.white_to_move:
+                self.moves_count -= 1
 
             self.board[last_move.end_row][last_move.end_col] = last_move.piece_captured
             self.board[last_move.start_row][last_move.start_col] = last_move.piece_moved
