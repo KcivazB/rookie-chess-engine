@@ -29,6 +29,9 @@ def main(fen):
     screen.fill(p.Color("white"))
 
     gs = chess_engine.GameState(fen)
+    print(f"Initial GameState:")
+    gs.print_self_data()
+
     valid_moves = gs.get_all_valid_moves()
 
     move_was_made = False
@@ -41,12 +44,11 @@ def main(fen):
 
     is_over = gs.is_check_mate or gs.is_stale_mate
 
-    is_white_human = False # True if white is a human, false if it's an AI -> TODO set it to int for level handling
-    is_black_human = False # True if black is a human, false if it's an AI -> TODO set it to int for level handling
+    is_white_human = True # True if white is a human, false if it's an AI -> TODO set it to int for level handling
+    is_black_human = True # True if black is a human, false if it's an AI -> TODO set it to int for level handling
 
     while running:
         is_human_turn = (gs.white_to_move and is_white_human) or (not gs.white_to_move and is_black_human) # Determine if it's an human turn to play
-
         for e in p.event.get():
             if e.type == p.QUIT:
                 running = False
@@ -79,6 +81,7 @@ def main(fen):
                 if e.key == p.K_BACKSPACE: # If BACKSPACE is pressed, undo last move
                     square_selected = ()
                     gs.undo_last_move()
+
                     move_was_made = True
 
                 if e.key == p.K_r: # If R is pressed, Reinitialize the whole game state
@@ -93,7 +96,6 @@ def main(fen):
             if not is_human_turn:
                 if valid_moves:
                     ai_smart_move = smart_move_finder.find_best_move_negamax(gs, valid_moves)
-
                     gs.make_move(ai_smart_move)
                     move_was_made = True
                 

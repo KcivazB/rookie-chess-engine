@@ -1,7 +1,7 @@
 class GameState:
-    def __init__(self, fen = None):
+    def __init__(self, fen=None):
         # Create an empty board
-        self.board = self.create_board(fen)
+        self.board = self.create_board()
 
         # Initialize other game state variables
         self.white_to_move = True
@@ -22,6 +22,12 @@ class GameState:
         ]
         self.is_stale_mate = False
         self.is_check_mate = False
+
+        self.half_moves_count = 0
+        self.half_moves_count_log = []  # New log for half moves count
+
+        self.moves_count = 0
+
         self.move_log = []
 
         # Load from FEN if provided
@@ -40,13 +46,9 @@ class GameState:
         }
 
 
-    def create_board(self, fen):
-        #Create an empty board.
-        self.board = [["--" for _ in range(8)] for _ in range(8)]
-        #If there's a FEN load it
-        if fen :
-            self.load_from_fen(fen)
-        return self.board
+    def create_board(self):
+        # Create an empty board.
+        return [["--" for _ in range(8)] for _ in range(8)]
 
     def setup_initial_board(self):
         """Setup the initial board configuration."""
@@ -63,7 +65,7 @@ class GameState:
         """Load the board and game state from the FEN string."""
         parts = fen.split()
         rows = parts[0].split('/')
-        
+
         # Load board configuration
         for r in range(8):
             c = 0
@@ -82,11 +84,18 @@ class GameState:
         self.current_castling_rights = self.parse_castling_rights(parts[2])
         self.en_passant_possible_square = self.parse_en_passant(parts[3])
 
+        # Set half moves count and moves count
+        self.half_moves_count = int(parts[4])
+        self.moves_count = int(parts[5])
+
         # Update kings' positions based on the FEN
         self.update_king_locations()
 
         # Check for any initial checks or pins
         self.in_check, self.pinned_pieces, self.checks = self.check_for_pins_and_checks()
+
+        # Print the relevant state information
+        self.print_self_data()
 
     def fen_char_to_piece(self, char):
         """Convert a FEN character to the internal piece notation."""
@@ -105,12 +114,22 @@ class GameState:
 
     def parse_en_passant(self, en_passant):
         """Parse the en passant target square from the FEN string."""
-        if en_passant == '-':
+        if (en_passant == '-') or (en_passant == ''):
             return ()
         else:
             col = ord(en_passant[0]) - ord('a')
             row = 8 - int(en_passant[1])
             return (row, col)
+
+    def print_self_data(self):
+        print(f"White to move: {self.white_to_move}")
+        print(f"Current castling rights: {self.current_castling_rights}")
+        print(f"En passant possible square: {self.en_passant_possible_square}")
+        print(f"Half moves count: {self.half_moves_count}")
+        print(f"Moves count: {self.moves_count}")
+        print(f"In check: {self.in_check}")
+        print(f"Pinned pieces: {self.pinned_pieces}")
+        print(f"Checks: {self.checks}")
 
     def update_king_locations(self):
         """Update the locations of the kings based on the board state."""
@@ -123,6 +142,9 @@ class GameState:
 
     def make_move(self, move):
         """Execute a move and update the board."""
+        #First, store the actual half moves count
+        self.half_moves_count_log.append(self.half_moves_count)
+
         self.board[move.start_row][move.start_col] = "--"
         self.board[move.end_row][move.end_col] = move.piece_moved
         self.move_log.append(move)
@@ -132,6 +154,12 @@ class GameState:
             self.w_king_location = (move.end_row, move.end_col)
         elif move.piece_moved == "bK":
             self.b_king_location = (move.end_row, move.end_col)
+
+        # If piece moves is a piece or a capture , reset half_moves_count
+        if move.piece_moved[1] == "P" or move.piece_captured != "--" :
+            self.half_moves_count = 0
+        else :
+            self.half_moves_count +=1
 
         #Handle En Passant Move
         if move.is_en_passant_move:
@@ -174,6 +202,10 @@ class GameState:
         """Undo the last move made."""
         if len(self.move_log) != 0:
             last_move = self.move_log.pop()
+
+            # Restore the previous half moves count
+            self.half_moves_count = self.half_moves_count_log.pop()
+
             self.board[last_move.end_row][last_move.end_col] = last_move.piece_captured
             self.board[last_move.start_row][last_move.start_col] = last_move.piece_moved
 
@@ -389,6 +421,8 @@ class GameState:
                 if end_piece[0] == enemy_color and end_piece[1] == "N":  # enemy knight attacking a king
                     in_check = True
                     checks.append((end_row, end_col, move[0], move[1]))
+
+        print(f"in check : {in_check}, pinned_pieces : {pinned_pieces}, checks : {checks}")
         return in_check, pinned_pieces, checks
 
     '''
@@ -658,3 +692,12 @@ class CastleRights:
         self.wQs = wQs
         self.bKs = bKs
         self.bQs = bQs
+
+    def __eq__(self, other):
+        if isinstance(other, CastleRights):
+            return (self.wKs == other.wKs and self.wQs == other.wQs and
+                    self.bKs == other.bKs and self.bQs == other.bQs)
+        return False
+    
+    def __repr__(self):
+        return f"CastleRights(wKs={self.wKs}, wQs={self.wQs}, bKs={self.bKs}, bQs={self.bQs})"

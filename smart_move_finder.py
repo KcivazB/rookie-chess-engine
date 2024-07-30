@@ -2,7 +2,6 @@ import random, time
 import chess_engine
 from constants import MAX_DEPTH, PIECE_SCORES, CHECK_MATE_SCORE, STALE_MATE_SCORE
 
-
 def pick_random_valid_move(valid_moves):
     random_move = valid_moves[random.randint(0, len(valid_moves) -1)]
     print("Random Move from find_random_moves : " + str(random_move))
@@ -17,22 +16,6 @@ def find_best_move_minmax(gs, valid_moves):
     evaluation_count = 0  # Reset the counter
     next_moves = [] #Init next moves as an array of all the potentials best moves 
     start_time = time.time()  # Record the start time
-    find_moves_negamax(gs, valid_moves, MAX_DEPTH, 1 if gs.white_to_move else -1) # sets next_moves as an array of the potentials best moves
-    end_time = time.time()  # Record the end time
-    elapsed_time = end_time - start_time  # Calculate elapsed time
-    print(f"Potential best moves count: {len(next_moves)}")
-    print(f"Total possibilities evaluated: {evaluation_count} in {elapsed_time:.2f}s")
-
-    return pick_random_valid_move(next_moves)
-
-'''
-Helper Method to make the first responsive call to NegaMax
-'''
-def find_best_move_negamax(gs, valid_moves):
-    global next_moves, evaluation_count
-    evaluation_count = 0  # Reset the counter
-    next_moves = [] #Init next moves as an array of all the potentials best moves 
-    start_time = time.time()  # Record the start time
     find_moves_minmax(gs, valid_moves, MAX_DEPTH, gs.white_to_move) # sets next_moves as an array of the potentials best moves
     end_time = time.time()  # Record the end time
     elapsed_time = end_time - start_time  # Calculate elapsed time
@@ -40,6 +23,7 @@ def find_best_move_negamax(gs, valid_moves):
     print(f"Total possibilities evaluated: {evaluation_count} in {elapsed_time:.2f}s")
 
     return pick_random_valid_move(next_moves)
+
 
 '''
 Recursively implemented find_best_move_material_based -- Using minMax
@@ -83,6 +67,24 @@ def find_moves_minmax(gs, valid_moves, depth, white_to_move):
             gs.undo_last_move()
         return min_score
 
+
+'''
+Helper Method to make the first responsive call to NegaMax
+'''
+def find_best_move_negamax(gs, valid_moves):
+    global next_moves, evaluation_count
+    evaluation_count = 0  # Reset the counter
+    next_moves = [] #Init next moves as an array of all the potentials best moves 
+    start_time = time.time()  # Record the start time
+    find_moves_negamax(gs, valid_moves, MAX_DEPTH, 1 if gs.white_to_move else -1) # sets next_moves as an array of the potentials best moves
+    end_time = time.time()  # Record the end time
+    elapsed_time = end_time - start_time  # Calculate elapsed time
+    print(f"Potential best moves count: {len(next_moves)}")
+    print(f"Total possibilities evaluated: {evaluation_count} in {elapsed_time:.2f}s")
+
+    return pick_random_valid_move(next_moves)
+
+
 '''
 Recursively implemented find_best_move_material_based -- Using NegaMax -- Same as minMax but shorter to write
 '''
@@ -96,8 +98,7 @@ def find_moves_negamax(gs, valid_moves, depth, turn_multiplier):
     for move in valid_moves:
         gs.make_move(move)
         next_valid_moves = gs.get_all_valid_moves()
-        gs.undo_last_move()
-        score = -find_moves_negamax(gs, valid_moves, depth, -turn_multiplier) # Find the opponent max score
+        score = -find_moves_negamax(gs, valid_moves, depth -1, -turn_multiplier) # Find the opponent max score
         if score > max_score: 
             max_score = score
             if depth == MAX_DEPTH:
@@ -106,6 +107,9 @@ def find_moves_negamax(gs, valid_moves, depth, turn_multiplier):
             max_score = score
             if depth == MAX_DEPTH:
                 next_moves.append(move)
+        
+        gs.undo_last_move()
+
     return max_score
 
 

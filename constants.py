@@ -21,7 +21,7 @@ PIECES = ["wP","wR","wN","wB","wQ","wK","bP","bR","bN","bB","bQ","bK"]
 '''
 AI PART 
 '''
-MAX_DEPTH = 3
+MAX_DEPTH = 2
 
 PIECE_SCORES = {
     "K" : 0,
