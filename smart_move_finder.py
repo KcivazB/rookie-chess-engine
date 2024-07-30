@@ -29,40 +29,40 @@ def find_best_move_material_based(gs, valid_moves):
         gs.make_move(player_move)
         # Generate all of the opponent future moves
         opponent_moves = gs.get_all_valid_moves()
-        opponent_max_score = -CHECK_MATE_SCORE  # Set the max opponent score
+        if gs.is_check_mate :
+            opponent_max_score = -CHECK_MATE_SCORE
+        elif gs.is_stale_mate :
+            opponent_max_score = STALE_MATE_SCORE
+        else :
+            opponent_max_score = -CHECK_MATE_SCORE  # Set the max opponent score
 
-        for opponent_move in opponent_moves:
-            # Execture the move
-            gs.make_move(opponent_move)
+            for opponent_move in opponent_moves:
+                # Execture the move
+                gs.make_move(opponent_move)
+                gs.get_all_valid_moves()
+                if gs.is_check_mate :
+                    score = CHECK_MATE_SCORE
+                elif gs.is_stale_mate :
+                    score = STALE_MATE_SCORE
+                else :
+                    score = -turn_multiplier * board_score_based_on_material(gs.board) # Update the new score value
+                print("Move Score score : " + str(score))
 
-            if gs.is_check_mate :
-                score = -turn_multiplier * CHECK_MATE_SCORE
-            elif gs.is_stale_mate :
-                score = STALE_MATE_SCORE
-            else :
-                score = -turn_multiplier * board_score_based_on_material(gs.board) # Update the new score value
-            print("Move Score score : " + str(score))
+                if score > opponent_max_score: # If score is better than best, then it's the new best
+                    opponent_max_score = score
 
-            if score > opponent_max_score: # If score is better than best, then it's the new best
-                opponent_max_score = score
-                print("Actual Best opponent score : " + str(score))
-                print("Actual Best opponent Move : " + str(player_move))
-            elif score == opponent_max_score: # If score is same as best_score, add it to the best moves list
-                print("Another move with the same Best score for the opponent: " + str(player_move))
-            gs.undo_last_move()
+                gs.undo_last_move()
         
-        if  opponent_max_score < opponent_lowest_max_score:
-
-            opponent_lowest_max_score = opponent_max_score
+        if  opponent_max_score < opponent_lowest_max_score: # If the opponent actual max score is lower than it's actual lowest, then this move is better
+            opponent_lowest_max_score = opponent_max_score # Replace previous lowest max score
             best_player_moves = [player_move]  # Reset the best moves list
 
-        elif opponent_max_score == opponent_lowest_max_score:
+        elif opponent_max_score == opponent_lowest_max_score: # If the opponent actual max score is same as the actual lowest, then noth moves are good
             best_player_moves.append(player_move)
 
         gs.undo_last_move()
 
     final_best_move = find_random_moves(best_player_moves) # Pick a random move in the list of best moves
-    print("Best move count from find_best_move_material_based : " + str(len(best_player_moves)))
     return final_best_move
 
 '''
