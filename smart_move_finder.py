@@ -3,131 +3,62 @@ import chess_engine
 from constants import MAX_DEPTH, PIECE_SCORES, CHECK_MATE_SCORE, STALE_MATE_SCORE
 
 def pick_random_valid_move(valid_moves):
-    random_move = valid_moves[random.randint(0, len(valid_moves) -1)]
+    random_move = valid_moves[random.randint(0, len(valid_moves) - 1)]
     print("Random Move from find_random_moves : " + str(random_move))
+    return random_move  # Return a random valid move 
 
-    return random_move # Return a random valid move 
-
-'''
-Helper Method to make the first responsive call to a recursive function
-'''
 def find_best_move(gs, valid_moves):
     global next_moves, evaluation_count
     evaluation_count = 0  # Reset the counter
-    next_moves = [] #Init next moves as an array of all the potentials best moves 
+    next_moves = []  # Init next moves as an array of all the potential best moves 
     start_time = time.time()  # Record the start time
-    find_moves_negamax_alpha_beta(gs, valid_moves, MAX_DEPTH, -CHECK_MATE_SCORE, CHECK_MATE_SCORE, 1 if gs.white_to_move else -1, MAX_DEPTH) # sets next_moves as an array of the potentials best moves
+    find_moves_negamax_alpha_beta(gs, valid_moves, MAX_DEPTH, -CHECK_MATE_SCORE, CHECK_MATE_SCORE, 1)  # sets next_moves as an array of the potential best moves
     end_time = time.time()  # Record the end time
     elapsed_time = end_time - start_time  # Calculate elapsed time
     print(f"Potential best moves count: {len(next_moves)}")
     print(f"Total possibilities evaluated: {evaluation_count} in {elapsed_time:.2f}s")
-
     return pick_random_valid_move(next_moves)
 
 
 '''
-Recursively implemented find_best_move_material_based -- Using minMax
-'''
-def find_moves_minmax(gs, valid_moves, depth, white_to_move):
-    global next_moves, evaluation_count
-    if depth == 0 : # Depth gets to 0 -> This is a terminal node
-        evaluation_count += 1
-        return board_score_based_on_gamestate(gs)
-    
-    if white_to_move:
-        max_score = -CHECK_MATE_SCORE
-        for move in valid_moves:
-            gs.make_move(move)
-            next_valid_moves = gs.get_all_valid_moves()
-            score = find_moves_minmax(gs, next_valid_moves, depth -1, False)
-            if score > max_score :
-                max_score = score
-                if depth == MAX_DEPTH:
-                    next_moves = [move]
-            if score == max_score :
-                max_score = score
-                if depth == MAX_DEPTH:
-                    next_moves.append(move)
-            gs.undo_last_move()
-        return max_score
-    else :
-        min_score = CHECK_MATE_SCORE
-        for move in valid_moves:
-            gs.make_move(move)
-            next_valid_moves = gs.get_all_valid_moves()
-            score = find_moves_minmax(gs, next_valid_moves, depth -1, True)
-            if score < min_score :
-                min_score = score
-                if depth == MAX_DEPTH:
-                    next_moves = [move]
-            elif score == min_score :
-                min_score = score
-                if depth == MAX_DEPTH:
-                    next_moves.append(move)
-            gs.undo_last_move()
-        return min_score
-
-
-'''
-Recursively implemented find_best_move_material_based -- Using NegaMax -- Same as minMax but shorter to write
-'''
-def find_moves_negamax(gs, valid_moves, depth, turn_multiplier):
-    global next_moves, evaluation_count
-    if depth == 0 : # Depth gets to 0 -> This is a terminal node
-        evaluation_count += 1
-        return turn_multiplier * board_score_based_on_gamestate(gs)
-
-    max_score = -CHECK_MATE_SCORE
-    for move in valid_moves:
-        gs.make_move(move)
-        next_valid_moves = gs.get_all_valid_moves()
-        score = -find_moves_negamax(gs, next_valid_moves, depth -1, -turn_multiplier) # Find the opponent max score
-        if score > max_score: 
-            max_score = score
-            if depth == MAX_DEPTH:
-                next_moves = [move]
-        elif score == max_score: 
-            max_score = score
-            if depth == MAX_DEPTH:
-                next_moves.append(move)
-        
-        gs.undo_last_move()
-
-    return max_score
-
-'''
 Recursively implemented find_best_move_material_based -- Using NegaMax AND AlphaBeta Pruning -- Same as minMax but shorter to write
 '''
-def find_moves_negamax_alpha_beta(gs, valid_moves, depth, alpha, beta, turn_multiplier, max_depth):
+def find_moves_negamax_alpha_beta(gs, valid_moves, depth, alpha, beta, color):
     global next_moves, evaluation_count
-    if depth == 0 : # Depth gets to 0 -> This is a terminal node
+    if depth == 0 or gs.is_game_over:
         evaluation_count += 1
-        return turn_multiplier * board_score_based_on_gamestate(gs)
+        return color * board_score_based_on_gamestate(gs)
 
-    # Move Ordering - Evaluate branches that end in ennemy in chess for example - TODO
+    # Move Ordering - Prioritize captures, checks, etc. (Placeholder for actual heuristics)
+    ordered_moves = sorted(valid_moves, key=lambda move: move_heuristic(gs, move), reverse=True)
+
     max_score = -CHECK_MATE_SCORE
-    for move in valid_moves :
+    for move in ordered_moves:
         gs.make_move(move)
         next_valid_moves = gs.get_all_valid_moves()
-        score = -find_moves_negamax_alpha_beta(gs, next_valid_moves, depth -1, -beta, -alpha, -turn_multiplier, max_depth) # Find the opponent max score
+        score = -find_moves_negamax_alpha_beta(gs, next_valid_moves, depth - 1, -beta, -alpha, -color)
         gs.undo_last_move()
 
-        if score > max_score : 
+        if score > max_score:
             max_score = score
-            if depth == MAX_DEPTH :
+            if depth == MAX_DEPTH:
                 next_moves = [move]
         elif score == max_score and depth == MAX_DEPTH:
-                next_moves.append(move)
-        
-        # Pruning 
-        if max_score > alpha :
-            alpha = max_score
-        
-        if alpha >= beta :
+            next_moves.append(move)
+
+        alpha = max(alpha, score)
+        if alpha >= beta:
             break
 
     return max_score
 
+def move_heuristic(gs, move):
+    # Placeholder for actual heuristic function
+    # Example: prioritize captures, checks, or other heuristics
+    gs.make_move(move)
+    score = board_score_based_on_gamestate(gs)
+    gs.undo_last_move()
+    return score
 
 '''
 Evaluate the board score based on gameState
@@ -162,3 +93,53 @@ def board_score_based_on_gamestate(gs):
 
     final_score = score + pieces_score
     return final_score
+
+# Example usage:
+# Assuming `gs` is an instance of your game state class and `valid_moves` is the list of legal moves
+# best_move = find_best_move(gs, gs.get_all_valid_moves())
+# print("Best move:", best_move)
+
+
+
+# '''
+# Recursively implemented find_best_move_material_based -- Using minMax
+# '''
+# def find_moves_minmax(gs, valid_moves, depth, white_to_move):
+#     global next_moves, evaluation_count
+#     if depth == 0 : # Depth gets to 0 -> This is a terminal node
+#         evaluation_count += 1
+#         return board_score_based_on_gamestate(gs)
+    
+#     if white_to_move:
+#         max_score = -CHECK_MATE_SCORE
+#         for move in valid_moves:
+#             gs.make_move(move)
+#             next_valid_moves = gs.get_all_valid_moves()
+#             score = find_moves_minmax(gs, next_valid_moves, depth -1, False)
+#             if score > max_score :
+#                 max_score = score
+#                 if depth == MAX_DEPTH:
+#                     next_moves = [move]
+#             if score == max_score :
+#                 max_score = score
+#                 if depth == MAX_DEPTH:
+#                     next_moves.append(move)
+#             gs.undo_last_move()
+#         return max_score
+#     else :
+#         min_score = CHECK_MATE_SCORE
+#         for move in valid_moves:
+#             gs.make_move(move)
+#             next_valid_moves = gs.get_all_valid_moves()
+#             score = find_moves_minmax(gs, next_valid_moves, depth -1, True)
+#             if score < min_score :
+#                 min_score = score
+#                 if depth == MAX_DEPTH:
+#                     next_moves = [move]
+#             elif score == min_score :
+#                 min_score = score
+#                 if depth == MAX_DEPTH:
+#                     next_moves.append(move)
+#             gs.undo_last_move()
+#         return min_score
+

@@ -11,8 +11,9 @@ class GameState:
         self.pinned_pieces = []
         self.checks = []
         self.en_passant_possible_square = ()
+        self.en_passant_possible_square_log = [self.en_passant_possible_square]
         self.current_castling_rights = CastleRights(True, True, True, True)
-        self.castling_rights_logs = [
+        self.castling_rights_log = [
             CastleRights(
                 self.current_castling_rights.wKs,
                 self.current_castling_rights.wQs,
@@ -22,6 +23,9 @@ class GameState:
         ]
         self.is_stale_mate = False
         self.is_check_mate = False
+        self.is_draw_due_to_75mr = False
+
+        self.is_game_over = False
 
         self.half_moves_count = 0
         self.half_moves_count_log = []  # New log for half moves count
@@ -37,11 +41,11 @@ class GameState:
             self.setup_initial_board()
 
         self.move_functions = {
-            "Q": self.get_queen_moves,
             "P": self.get_pawn_moves,
             "N": self.get_knight_moves,
             "B": self.get_bishop_moves,
             "R": self.get_rook_moves,
+            "Q": self.get_queen_moves,
             "K": self.get_king_moves
         }
 
@@ -93,7 +97,7 @@ class GameState:
 
         # Check for any initial checks or pins
         self.in_check, self.pinned_pieces, self.checks = self.check_for_pins_and_checks()
-
+        
         # Print the relevant state information
         self.print_self_data()
 
@@ -169,8 +173,9 @@ class GameState:
         # Check for 75-move rule
         if self.half_moves_count >= 75:
             self.is_stale_mate = True  # Set draw flag
+            self.is_game_over = True
             print("75-move rule reached: Game is a draw.")  # TODO Check what happens after this 
-            return
+            
         #Handle En Passant Move
         if move.is_en_passant_move:
             # Capture the pawn 
@@ -197,12 +202,15 @@ class GameState:
 
         #Update the castling rights. If the kings moves or the rook moves.
         self.update_castling_rights(move)
-        self.castling_rights_logs.append(
+        self.castling_rights_log.append(
             CastleRights(
                 self.current_castling_rights.wKs, self.current_castling_rights.wQs,
                 self.current_castling_rights.bKs, self.current_castling_rights.bQs
             )
         )
+
+        #Add the square where en passant is possible to the list
+        self.en_passant_possible_square_log.append(self.en_passant_possible_square)
 
 
         # Next player's turn
@@ -213,9 +221,6 @@ class GameState:
         if len(self.move_log) != 0:
             last_move = self.move_log.pop()
 
-            # Restore the previous half moves count
-            self.half_moves_count = self.half_moves_count_log.pop()
-            
             # Decrement moves_count on whites turns
             if self.white_to_move:
                 self.moves_count -= 1
@@ -232,11 +237,13 @@ class GameState:
             if last_move.is_en_passant_move:
                 self.board[last_move.end_row][last_move.end_col] = "--"
                 self.board[last_move.start_row][last_move.end_col] = last_move.piece_captured
-                self.en_passant_possible_square = (last_move.end_row, last_move.end_col)
+
+            self.en_passant_possible_square_log.pop() # Remove lastly created en passant log 
+            self.en_passant_possible_square = self.en_passant_possible_square_log[-1] # Set it back to it's previous state
 
             # Restore castling rights
-            self.castling_rights_logs.pop()  # Remove the most recent castling rights
-            self.current_castling_rights = self.castling_rights_logs[-1]  # Restore previous castling rights
+            self.castling_rights_log.pop()  # Remove the most recent castling rights
+            self.current_castling_rights = self.castling_rights_log[-1]  # Restore previous castling rights
 
             # Undo castling move
             if last_move.is_castling:
@@ -248,10 +255,8 @@ class GameState:
                     self.board[last_move.end_row][last_move.end_col + 1] = "--"  # Remove the rook from the new position
 
             # Adjust 75-move rule counter
-            if last_move.piece_moved[1] == "P" or last_move.piece_captured != "--":
-                self.half_moves_count = 0  # Reset counter
-            else:
-                self.half_moves_count -= 1  # Decrement counter
+            self.half_moves_count = self.half_moves_count_log.pop()  # Reset counter
+
 
             # Restore any other game state variables
             self.in_check, self.pinned_pieces, self.checks = self.check_for_pins_and_checks()
@@ -262,11 +267,10 @@ class GameState:
             # Next player's turn
             self.white_to_move = not self.white_to_move
 
-
-    '''
-    Update the state of the gameboard castle rights
-    '''
     def update_castling_rights(self, move):
+        """
+        Update the castling rights based on the move.
+        """
         if move.piece_moved == "wK":
             self.current_castling_rights.wKs = False
             self.current_castling_rights.wQs = False
@@ -274,17 +278,34 @@ class GameState:
             self.current_castling_rights.bKs = False
             self.current_castling_rights.bQs = False
         elif move.piece_moved == "wR":
-            if move.start_row == 7:
-                if move.start_col == 0:  # Left Rook
-                    self.current_castling_rights.wQs = False
-                elif move.start_col == 7:  # Right Rook
-                    self.current_castling_rights.wKs = False
+            self.disable_white_rook_castling_rights(move.start_row, move.start_col)
         elif move.piece_moved == "bR":
-            if move.start_row == 0:
-                if move.start_col == 0:  # Left Rook
-                    self.current_castling_rights.bQs = False
-                elif move.start_col == 7:  # Right Rook
-                    self.current_castling_rights.bKs = False
+            self.disable_black_rook_castling_rights(move.start_row, move.start_col)
+        
+        if move.piece_captured == "wR":
+            self.disable_white_rook_castling_rights(move.end_row, move.end_col)
+        elif move.piece_captured == "bR":
+            self.disable_black_rook_castling_rights(move.end_row, move.end_col)
+
+    def disable_white_rook_castling_rights(self, row, col):
+        """
+        Disable white rook castling rights based on its position.
+        """
+        if row == 7:
+            if col == 0:  # Left Rook
+                self.current_castling_rights.wQs = False
+            elif col == 7:  # Right Rook
+                self.current_castling_rights.wKs = False
+
+    def disable_black_rook_castling_rights(self, row, col):
+        """
+        Disable black rook castling rights based on its position.
+        """
+        if row == 0:
+            if col == 0:  # Left Rook
+                self.current_castling_rights.bQs = False
+            elif col == 7:  # Right Rook
+                self.current_castling_rights.bKs = False
 
 
     def get_all_valid_moves(self):

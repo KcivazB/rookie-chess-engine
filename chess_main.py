@@ -1,6 +1,7 @@
 import pygame as p
+import time
 import chess_engine
-from constants import DIMENSION, IMAGE_DIR, SQ_SIZE, PIECES, IMAGES, THEMES, THEME, WIDTH, HEIGHT, MAX_FPS
+from constants import DIMENSION, IMAGE_DIR, SQ_SIZE, PIECES, IMAGES, THEMES, THEME, BOARD_WIDTH, BOARD_HEIGHT, MOVE_LOG_PANEL_WIDTH, MAX_FPS
 import smart_move_finder
 import cairosvg
 import io
@@ -24,13 +25,15 @@ The main driver for the code
 '''
 def main(fen):
     p.init()
-    screen = p.display.set_mode((WIDTH, HEIGHT))
+    screen = p.display.set_mode((BOARD_WIDTH + MOVE_LOG_PANEL_WIDTH, BOARD_HEIGHT))
     clock = p.time.Clock()
     screen.fill(p.Color("white"))
+    move_log_font = p.font.SysFont("Arial", 12, False, False)
+
 
     gs = chess_engine.GameState(fen)
     # print(f"Initial GameState:")
-    # gs.print_self_data()
+    gs.print_self_data()
 
     valid_moves = gs.get_all_valid_moves()
 
@@ -42,10 +45,9 @@ def main(fen):
     running = True
     valid_moves_for_selected_piece = []
 
-    is_over = gs.is_check_mate or gs.is_stale_mate
 
-    is_white_human = True # True if white is a human, false if it's an AI -> TODO set it to int for level handling
-    is_black_human = True # True if black is a human, false if it's an AI -> TODO set it to int for level handling
+    is_white_human = False # True if white is a human, false if it's an AI -> TODO set it to int for level handling
+    is_black_human = False # True if black is a human, false if it's an AI -> TODO set it to int for level handling
 
     while running:
         is_human_turn = (gs.white_to_move and is_white_human) or (not gs.white_to_move and is_black_human) # Determine if it's an human turn to play
@@ -53,11 +55,11 @@ def main(fen):
             if e.type == p.QUIT:
                 running = False
             elif e.type == p.MOUSEBUTTONDOWN:
-                if not is_over and is_human_turn: # IF game is not over and Human is playing
+                if not gs.is_game_over and is_human_turn: # IF game is not over and Human is playing
                     location = p.mouse.get_pos()
                     col = location[0] // SQ_SIZE
                     row = location[1] // SQ_SIZE
-                    if square_selected == (row, col):
+                    if square_selected == (row, col) or col >= 8:
                         square_selected = ()
                         player_clicks = []
                         valid_moves_for_selected_piece = []
@@ -71,6 +73,8 @@ def main(fen):
                             if move == valid_moves[i]:
                                 gs.make_move(valid_moves[i])
                                 move_was_made = True
+                                print(f"Half moves count : {gs.half_moves_count}")  # TODO Check what happens after this 
+
                                 square_selected = ()
                                 player_clicks = []
                                 valid_moves_for_selected_piece = []
@@ -81,7 +85,6 @@ def main(fen):
                 if e.key == p.K_BACKSPACE: # If BACKSPACE is pressed, undo last move
                     square_selected = ()
                     gs.undo_last_move()
-
                     move_was_made = True
 
                 if e.key == p.K_r: # If R is pressed, Reinitialize the whole game state
@@ -92,30 +95,50 @@ def main(fen):
                     player_clicks = []
         
         #AI MOVE FINDER LOGIC
-        if not is_over:
+        if not gs.is_game_over:
             if not is_human_turn:
                 if valid_moves:
                     ai_smart_move = smart_move_finder.find_best_move(gs, valid_moves)
                     gs.make_move(ai_smart_move)
                     move_was_made = True
-                
+                    print(f"Half moves count : {gs.half_moves_count}")  # TODO Check what happens after this 
+
+    
+        # Check for the half-move limit
+        if gs.half_moves_count >= 75:
+            gs.is_draw_due_to_75mr = True
+
         if move_was_made:
             valid_moves = gs.get_all_valid_moves()
             move_was_made = False
             # gs.print_self_data()    
 
-        draw_game_state(screen, gs, square_selected, valid_moves_for_selected_piece)
+        draw_game_state(screen, gs, square_selected, valid_moves_for_selected_piece, move_log_font)
 
         if gs.is_stale_mate:
             text = "White is stale mate - Draw game" if gs.white_to_move else "Black is stale mate - Draw game"
             draw_text_on_screen(screen, text)
-        if gs.is_check_mate:
+        elif gs.is_check_mate:
             text = "White is check mate - Black won" if gs.white_to_move else "Black is check mate - White won"
             draw_text_on_screen(screen, text)
-
+        elif gs.is_draw_due_to_75mr:
+            text = "Draw due to 75-move rule"
+            draw_text_on_screen(screen, text)
 
         clock.tick(MAX_FPS)
         p.display.flip()
+
+
+'''
+Draw move logs
+'''
+def draw_move_log(screen, gs, font):
+    # text_object = font.render(text, 0, THEMES[THEME]["capture_color"])
+    # text_location = p.Rect(0, 0, BOARD_WIDTH, BOARD_HEIGHT).move( BOARD_WIDTH // 2 - text_object.get_width() // 2, BOARD_HEIGHT // 2 - text_object.get_height() // 2 )
+    # screen.blit(text_object, text_location)
+
+    move_log_rect = p.Rect(BOARD_WIDTH, 0, MOVE_LOG_PANEL_WIDTH, BOARD_HEIGHT)
+    p.draw.rect(screen, THEMES[THEME]["highlighted"], move_log_rect)
 
 '''
 Draw text on the screen
@@ -123,15 +146,16 @@ Draw text on the screen
 def draw_text_on_screen(screen, text):
     font = p.font.SysFont("Helvetica", 60, True, False)
     text_object = font.render(text, 0, THEMES[THEME]["capture_color"])
-    text_location = p.Rect(0, 0, WIDTH, HEIGHT).move( WIDTH // 2 - text_object.get_width() // 2, HEIGHT // 2 - text_object.get_height() // 2 )
+    text_location = p.Rect(0, 0, BOARD_WIDTH, BOARD_HEIGHT).move( BOARD_WIDTH // 2 - text_object.get_width() // 2, BOARD_HEIGHT // 2 - text_object.get_height() // 2 )
     screen.blit(text_object, text_location)
 
 '''
 Responsible for all graphics within game state
 '''
-def draw_game_state(screen, gs, square_selected, valid_moves_for_selected_piece):
+def draw_game_state(screen, gs, square_selected, valid_moves_for_selected_piece, move_log_font):
     draw_board_squares(screen, gs, square_selected, valid_moves_for_selected_piece)
     draw_pieces(screen, gs)
+    draw_move_log(screen, gs, move_log_font)
 
 '''
 Draw the squares on the board
