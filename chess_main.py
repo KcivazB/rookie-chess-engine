@@ -1,7 +1,7 @@
 import pygame as p
 import time
 import chess_engine
-from constants import DIMENSION, IMAGE_DIR, SQ_SIZE, PIECES, IMAGES, THEMES, THEME, BOARD_WIDTH, BOARD_HEIGHT, MOVE_LOG_PANEL_WIDTH, MAX_FPS
+from constants import DIMENSION, IMAGE_DIR, SQ_SIZE, PIECES, IMAGES, THEMES, THEME, BOARD_WIDTH, BOARD_HEIGHT, MOVE_LOG_PANEL_WIDTH, MAX_FPS, BLACK_IS_HUMAN, WHITE_IS_HUMAN
 import smart_move_finder
 import cairosvg
 import io
@@ -46,8 +46,8 @@ def main(fen):
     valid_moves_for_selected_piece = []
 
 
-    is_white_human = True # True if white is a human, false if it's an AI -> TODO set it to int for level handling
-    is_black_human = True # True if black is a human, false if it's an AI -> TODO set it to int for level handling
+    is_white_human = WHITE_IS_HUMAN # True if white is a human, false if it's an AI -> TODO set it to int for level handling
+    is_black_human = BLACK_IS_HUMAN # True if black is a human, false if it's an AI -> TODO set it to int for level handling
 
     while running:
         is_human_turn = (gs.white_to_move and is_white_human) or (not gs.white_to_move and is_black_human) # Determine if it's an human turn to play
@@ -143,9 +143,9 @@ def draw_move_log(screen, gs, font):
     move_texts = []
 
     for i in range(0, len(move_logs), 2):
-        move_string = str(i//2 + 1) + ". " + move_logs[i].get_chess_notation()
+        move_string = str(i//2 + 1) + ". " + str(move_logs[i])
         if i+1 < len(move_logs):
-            move_string += "-" + move_logs[i + 1].get_chess_notation()
+            move_string += "-" + str(move_logs[i + 1])
         move_texts.append(move_string)
 
     padding = 50

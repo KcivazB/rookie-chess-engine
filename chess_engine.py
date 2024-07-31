@@ -1,4 +1,4 @@
-from constants import PIECES_SYMBOLS
+from constants import PIECES_SYMBOLS, DIMENSION
 class GameState:
     def __init__(self, fen=None):
         # Create an empty board
@@ -53,7 +53,7 @@ class GameState:
 
     def create_board(self):
         # Create an empty board.
-        return [["--" for _ in range(8)] for _ in range(8)]
+        return [["--" for _ in range(DIMENSION)] for _ in range(DIMENSION)]
 
     def setup_initial_board(self):
         """Setup the initial board configuration."""
@@ -72,7 +72,7 @@ class GameState:
         rows = parts[0].split('/')
 
         # Load board configuration
-        for r in range(8):
+        for r in range(DIMENSION):
             c = 0
             for char in rows[r]:
                 if char.isdigit():
@@ -138,8 +138,8 @@ class GameState:
 
     def update_king_locations(self):
         """Update the locations of the kings based on the board state."""
-        for r in range(8):
-            for c in range(8):
+        for r in range(DIMENSION):
+            for c in range(DIMENSION):
                 if self.board[r][c] == 'wK':
                     self.w_king_location = (r, c)
                 elif self.board[r][c] == 'bK':
@@ -479,11 +479,16 @@ class GameState:
             start_row = 6
             back_row = 0
             ennemy_color = "b"
+            king_row, king_col = self.w_king_location
         else:
             move_sign = 1
             start_row = 1
             back_row = 7
             ennemy_color = "w"
+            king_row, king_col = self.b_king_location
+
+        is_blocking_piece = False
+        is_attacking_piece = False
 
         # Check if the pawn is pinned
         for i in range(len(self.pinned_pieces) - 1, -1, -1):
@@ -511,7 +516,29 @@ class GameState:
             # Handle En Passant
             elif (r + move_sign, c - 1) == self.en_passant_possible_square:
                 if not is_piece_pinned or pin_direction == (move_sign, -1):
-                    moves.append(Move((r, c), (r + move_sign, c - 1), self.board, is_en_passant=True))
+                    # Check whether or not the kings is chess protected by the piece took, if not add to the moves
+                    if king_row == r:
+                        if king_col < c : #King is left of the moving pawn
+                            # piece between the king and the pawn 
+                            inside_range = range(king_col + 1, c - 1) # From the right of the king to the pawn captured to the left
+                            outside_range = range(c+1, 8)
+                            # piece outside that attacks the king
+                        else : #King is right of the moving pawn
+                            inside_range = range(king_col - 1, c, -1) # From the right of the king to the pawn captured to the left
+                            outside_range = range(c - 2, -1, -1)
+                        
+                        for i in inside_range:
+                            if self.board[r][i] != "--": # If the square is not empty, then theres a blocking piece
+                                is_blocking_piece = True
+                        for i in outside_range:
+                            square = self.board[r][i]
+                            if square[0] == ennemy_color and (square[1] == "R" or square[1]=="Q"): # If theres an ennemy Rook or Queen on the row then it's threatening
+                                is_attacking_piece = True
+                            elif square != "--": # Theres another piece that in facts blocks the attack
+                                is_blocking_piece = True
+
+                        if not is_attacking_piece or is_blocking_piece: # If theres any blocking piece on the row then it's valid else not.
+                            moves.append(Move((r, c), (r + move_sign, c - 1), self.board, is_en_passant=True))
 
         # Capture to the right
         if c + 1 <= 7:
@@ -522,8 +549,29 @@ class GameState:
             # Handle En Passant
             elif (r + move_sign, c + 1) == self.en_passant_possible_square:
                 if not is_piece_pinned or pin_direction == (move_sign, 1):
-                    moves.append(Move((r, c), (r + move_sign, c + 1), self.board, is_en_passant=True))
+                    #Check whether or not the kings is chess protected by the piece took, if not add to the moves
+                    if king_row == r:
+                        if king_col < c : #King is left of the moving pawn
+                            # piece between the king and the pawn 
+                            inside_range = range(king_col + 1, c) # From the right of the king to the pawn captured to the right
+                            outside_range = range(c + 2, 8)
+                            # piece outside that attacks the king
+                        else : #King is right of the moving pawn
+                            inside_range = range(king_col - 1, c + 1 , -1) # From the right of the king to the pawn captured to the left
+                            outside_range = range(c - 1, -1, -1)
 
+                        for i in inside_range:
+                            if self.board[r][i] != "--": # If the square is not empty, then theres a blocking piece
+                                is_blocking_piece = True
+                        for i in outside_range:
+                            square = self.board[r][i]
+                            if square[0] == ennemy_color and (square[1] == "R" or square[1]=="Q"): # If theres an ennemy Rook or Queen on the row then it's threatening
+                                is_attacking_piece = True
+                            elif square != "--": # Theres another piece that in facts blocks the attack
+                                is_blocking_piece = True
+
+                        if not is_attacking_piece or is_blocking_piece: # If theres any blocking piece on the row then it's valid else not.
+                            moves.append(Move((r, c), (r + move_sign, c + 1), self.board, is_en_passant=True))
 
 
     def get_rook_moves(self, row, col, moves):
@@ -717,7 +765,10 @@ class Move:
     def piece_to_symbol(self, piece):
         return PIECES_SYMBOLS[piece]
 
-    def get_chess_notation(self):
+    def __str__(self):
+        if self.is_castling : 
+            return "O-O" if self.end_col == 6 else "O-O-O"
+
         if self.piece_captured != "--":
             if self.piece_moved == "wP" or self.piece_moved == "bP":
                 return self.get_rank_file(self.start_row, self.start_col)[0] + "x" + self.get_rank_file(self.end_row, self.end_col)
