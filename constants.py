@@ -18,6 +18,20 @@ IMAGES = {}
 CHESS CONSTANTS
 '''
 PIECES = ["wP","wR","wN","wB","wQ","wK","bP","bR","bN","bB","bQ","bK"]
+PIECES_SYMBOLS = {
+    "wP" : "♙",
+    "wR" : "♖",
+    "wN" : "♘",
+    "wB" : "♗",
+    "wQ" : "♕",
+    "wK" : "♔",
+    "bP" : "♟︎",
+    "bR" : "♜",
+    "bN" : "♞",
+    "bB" : "♝",
+    "bQ" : "♛",
+    "bK" : "♚"
+}
 
 '''
 AI PART 

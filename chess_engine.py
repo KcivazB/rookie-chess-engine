@@ -1,3 +1,4 @@
+from constants import PIECES_SYMBOLS
 class GameState:
     def __init__(self, fen=None):
         # Create an empty board
@@ -32,7 +33,7 @@ class GameState:
 
         self.moves_count = 1
 
-        self.move_log = []
+        self.move_logs = []
 
         # Load from FEN if provided
         if fen:
@@ -156,7 +157,7 @@ class GameState:
         if not self.white_to_move:
             self.moves_count += 1
 
-        self.move_log.append(move)
+        self.move_logs.append(move)
 
         # Update the king's location if moved
         if move.piece_moved == "wK":
@@ -218,8 +219,8 @@ class GameState:
 
     def undo_last_move(self):
         """Undo the last move made."""
-        if len(self.move_log) != 0:
-            last_move = self.move_log.pop()
+        if len(self.move_logs) != 0:
+            last_move = self.move_logs.pop()
 
             # Decrement moves_count on whites turns
             if self.white_to_move:
@@ -256,7 +257,6 @@ class GameState:
 
             # Adjust 75-move rule counter
             self.half_moves_count = self.half_moves_count_log.pop()  # Reset counter
-
 
             # Restore any other game state variables
             self.in_check, self.pinned_pieces, self.checks = self.check_for_pins_and_checks()
@@ -713,6 +713,9 @@ class Move:
     def __eq__(self, other):
         if isinstance(other, Move):
             return other.move_id == self.move_id
+
+    def piece_to_symbol(self, piece):
+        return PIECES_SYMBOLS[piece]
 
     def get_chess_notation(self):
         if self.piece_captured != "--":

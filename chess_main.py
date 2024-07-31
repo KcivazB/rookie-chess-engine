@@ -46,8 +46,8 @@ def main(fen):
     valid_moves_for_selected_piece = []
 
 
-    is_white_human = False # True if white is a human, false if it's an AI -> TODO set it to int for level handling
-    is_black_human = False # True if black is a human, false if it's an AI -> TODO set it to int for level handling
+    is_white_human = True # True if white is a human, false if it's an AI -> TODO set it to int for level handling
+    is_black_human = True # True if black is a human, false if it's an AI -> TODO set it to int for level handling
 
     while running:
         is_human_turn = (gs.white_to_move and is_white_human) or (not gs.white_to_move and is_black_human) # Determine if it's an human turn to play
@@ -133,12 +133,33 @@ def main(fen):
 Draw move logs
 '''
 def draw_move_log(screen, gs, font):
-    # text_object = font.render(text, 0, THEMES[THEME]["capture_color"])
-    # text_location = p.Rect(0, 0, BOARD_WIDTH, BOARD_HEIGHT).move( BOARD_WIDTH // 2 - text_object.get_width() // 2, BOARD_HEIGHT // 2 - text_object.get_height() // 2 )
-    # screen.blit(text_object, text_location)
-
+    # Create a new rectangle object
     move_log_rect = p.Rect(BOARD_WIDTH, 0, MOVE_LOG_PANEL_WIDTH, BOARD_HEIGHT)
+    # Draw it on the screen
     p.draw.rect(screen, THEMES[THEME]["highlighted"], move_log_rect)
+
+    #Get all the move logs and their corresponding chess notation
+    move_logs = gs.move_logs
+    move_texts = []
+
+    for i in range(0, len(move_logs), 2):
+        move_string = str(i//2 + 1) + ". " + move_logs[i].get_chess_notation()
+        if i+1 < len(move_logs):
+            move_string += "-" + move_logs[i + 1].get_chess_notation()
+        move_texts.append(move_string)
+
+    padding = 50
+    text_y = padding 
+    line_spacing = 5
+
+    # Add all the moves inside the new rectangle
+    for i in range(len(move_texts)):
+        text = move_texts[i]
+        text_object = font.render(text, True, THEMES[THEME]["white"])
+        text_location = move_log_rect.move(padding, text_y )
+        screen.blit(text_object, text_location)
+        text_y += text_object.get_height() + line_spacing
+
 
 '''
 Draw text on the screen
