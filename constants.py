@@ -14,7 +14,7 @@ MAX_FPS = 60
 IMAGE_DIR = "images"
 IMAGES = {}
 
-WHITE_IS_HUMAN = False
+WHITE_IS_HUMAN = True
 BLACK_IS_HUMAN = False
 
 
@@ -40,7 +40,7 @@ PIECES_SYMBOLS = {
 '''
 AI PART 
 '''
-MAX_DEPTH = 3
+MAX_DEPTH = 4
 
 PIECE_SCORES = {
     "K": 0,

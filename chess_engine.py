@@ -263,6 +263,7 @@ class GameState:
 
             self.checkmate = False
             self.stalemate = False
+            self.is_draw_due_to_75mr = False
 
             # Next player's turn
             self.white_to_move = not self.white_to_move
