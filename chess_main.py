@@ -6,6 +6,7 @@ import smart_move_finder
 import cairosvg
 import io
 import argparse
+from multiprocessing import Process, Queue
 
 '''
 Initialize a global dictionary of the images. Called once
@@ -49,6 +50,10 @@ def main(fen):
     is_white_human = WHITE_IS_HUMAN # True if white is a human, false if it's an AI -> TODO set it to int for level handling
     is_black_human = BLACK_IS_HUMAN # True if black is a human, false if it's an AI -> TODO set it to int for level handling
 
+    ai_thinking = False
+    move_undone = False
+    move_finder_process = None
+
     while running:
         is_human_turn = (gs.white_to_move and is_white_human) or (not gs.white_to_move and is_black_human) # Determine if it's an human turn to play
         for e in p.event.get():
@@ -86,24 +91,37 @@ def main(fen):
                     square_selected = ()
                     gs.undo_last_move()
                     move_was_made = True
+                    if ai_thinking:
+                        move_finder_process.terminate()
+                        ai_thinking = False
 
                 if e.key == p.K_r: # If R is pressed, Reinitialize the whole game state
                     gs = chess_engine.GameState(fen)
                     valid_moves = gs.get_all_valid_moves()
-                    move_was_made = False
+                    move_was_made = True
                     square_selected = ()
                     player_clicks = []
-        
-        #AI MOVE FINDER LOGIC
-        if not gs.is_game_over:
-            if not is_human_turn:
-                if valid_moves:
-                    ai_smart_move = smart_move_finder.find_best_move(gs, valid_moves)
-                    gs.make_move(ai_smart_move)
-                    move_was_made = True
-                    print(f"Half moves count : {gs.half_moves_count}")  # TODO Check what happens after this 
+                    if ai_thinking:
+                        move_finder_process.terminate()
+                        ai_thinking = False
+                    move_undone = True
 
-    
+        #AI MOVE FINDER LOGIC
+        if not gs.is_game_over and not is_human_turn and not move_undone and valid_moves:
+            if not ai_thinking:
+                ai_thinking = True
+                return_queue = Queue()  # used to pass data between threads
+                move_finder_process = Process(target=smart_move_finder.find_best_move, args=(gs, valid_moves, return_queue))
+                move_finder_process.start()
+
+            if not move_finder_process.is_alive():
+                ai_smart_move = return_queue.get()
+                gs.make_move(ai_smart_move)
+                move_was_made = True
+                ai_thinking = False
+
+                print(f"Half moves count : {gs.half_moves_count}")  # TODO Check what happens after this 
+
         # Check for the half-move limit
         if gs.half_moves_count >= 75:
             gs.is_draw_due_to_75mr = True
@@ -111,6 +129,7 @@ def main(fen):
         if move_was_made:
             valid_moves = gs.get_all_valid_moves()
             move_was_made = False
+            move_undone = False
             # gs.print_self_data()    
 
         draw_game_state(screen, gs, square_selected, valid_moves_for_selected_piece, move_log_font)

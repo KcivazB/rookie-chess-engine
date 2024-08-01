@@ -1,28 +1,38 @@
 import random, time
 import chess_engine
 from constants import MAX_DEPTH, PIECE_SCORES, PIECE_POSITION_SCORE, CHECK_MATE_SCORE, STALE_MATE_SCORE
+import pickle
 
 def pick_random_valid_move(valid_moves):
     random_move = valid_moves[random.randint(0, len(valid_moves) - 1)]
     print("Random Move from find_random_moves : " + str(random_move))
     return random_move  # Return a random valid move 
 
-def find_best_move(gs, valid_moves):
+def find_best_move(gs, valid_moves, return_queue):
     global next_moves, evaluation_count
-    evaluation_count = 0  # Reset the counter
-    next_moves = []  # Init next moves as an array of all the potential best moves 
-    start_time = time.time()  # Record the start time
-    with open('negamax_log.txt', 'w') as log_file:
-        # Call the negamax function with alpha-beta pruning
-        find_moves_negamax_alpha_beta(gs, valid_moves, MAX_DEPTH, -CHECK_MATE_SCORE, CHECK_MATE_SCORE, 1 if gs.white_to_move else -1, log_file)
-        
-    print("Search complete. Log written to negamax_log.txt")    
-    end_time = time.time()  # Record the end time
-    elapsed_time = end_time - start_time  # Calculate elapsed time
+    evaluation_count = 0
+    next_moves = []
+    start_time = time.time()
+
+    transposition_table = TranspositionTable()
+    transposition_table.load('transposition_table.pkl')
+
+    print(f"Transposition table length : {len(transposition_table.table)}")
+
+    find_moves_negamax_alpha_beta_with_memory(gs, valid_moves, MAX_DEPTH, -CHECK_MATE_SCORE, CHECK_MATE_SCORE, 1 if gs.white_to_move else -1, transposition_table)
+
+    print("Search complete. Log written to negamax_log.txt")
+    end_time = time.time()
+    elapsed_time = end_time - start_time
     print(f"Potential best moves count: {len(next_moves)}")
     print(f"Total possibilities evaluated: {evaluation_count} in {elapsed_time:.2f}s")
-    return pick_random_valid_move(next_moves)
 
+    transposition_table.save('transposition_table.pkl')
+
+    best_move = pick_random_valid_move(next_moves)
+    return_queue.put(best_move)
+
+     
 """
 Negamax function with alpha-beta pruning for move generation and evaluation.
 Logs detailed move information and search parameters to a file.
@@ -39,58 +49,61 @@ Args:
 Returns:
     int: The score of the best move found.
 """
-def find_moves_negamax_alpha_beta(gs, valid_moves, depth, alpha, beta, turn_multiplier, log_file):
-
+def find_moves_negamax_alpha_beta_with_memory(gs, valid_moves, depth, alpha, beta, turn_multiplier, transposition_table):
     global next_moves, evaluation_count
+
+    board_hash = hash_board(gs.board)
+    stored_score, stored_depth, flag, stored_best_move = transposition_table.lookup(board_hash)
+
+    # Check for stored value in the transposition table (Null Window)
+    if stored_depth is not None and stored_depth >= depth:
+        if flag == 'exact':
+            return stored_score
+        elif flag == 'lower' and stored_score > alpha:
+            alpha = stored_score
+        elif flag == 'upper' and stored_score < beta:
+            beta = stored_score
 
     # Base case: Return the evaluation of the board if depth is 0 or game is over
     if depth == 0 or gs.is_game_over:
         evaluation_count += 1
         score = turn_multiplier * board_score_based_on_gamestate(gs)
-        log_file.write(f"Depth {depth}: Base Score: {score}\n")
-        log_file.write(f"Depth {depth}: Final Score (Evaluation): {score}\n")
         return score
 
     max_score = -CHECK_MATE_SCORE
     best_moves = []
 
-    # Log initial alpha and beta values
-    log_file.write(f"Depth {depth}: Alpha: {alpha}, Beta: {beta}\n")
-
     # Iterate through all valid moves
     for move in valid_moves:
         gs.make_move(move)
         next_valid_moves = gs.get_all_valid_moves()
-        score = -find_moves_negamax_alpha_beta(gs, next_valid_moves, depth - 1, -beta, -alpha, -turn_multiplier, log_file)
+        score = -find_moves_negamax_alpha_beta_with_memory(gs, next_valid_moves, depth - 1, -beta, -alpha, -turn_multiplier, transposition_table)
         gs.undo_last_move()
-
-        # Calculate the score for the current move
-
-        # Log move details and scores
-        log_file.write(f"Depth {depth}: Move {move} -> Current Score: {score}\n")
 
         # Update the best score and best moves list
         if score > max_score:
             max_score = score
             best_moves = [move]
-            log_file.write(f"Depth {depth}: New Best Move: {move} with Score: {max_score}\n")
         elif score == max_score:
             best_moves.append(move)
 
         alpha = max(alpha, score)
         if alpha >= beta:
-            log_file.write(f"Depth {depth}: Move {move} is pruned (Alpha >= Beta). Alpha: {alpha}, Beta: {beta}\n")
             break
 
-    # Log final alpha and beta values after processing all moves
-    log_file.write(f"Depth {depth}: Final Alpha: {alpha}, Final Beta: {beta}\n")
-
-    # If at the top level, update the global list of next best moves
+    # Store the result in the transposition table
     if depth == MAX_DEPTH:
+        if max_score <= alpha:
+            flag = 'upper'
+        elif max_score >= beta:
+            flag = 'lower'
+        else:
+            flag = 'exact'
+        transposition_table.store(board_hash, max_score, depth, flag, best_moves[0] if best_moves else None)
         next_moves = best_moves
-        log_file.write(f"Top Level: Best Moves: {str(next_moves)}\n")
 
     return max_score
+
 
 
 
@@ -125,7 +138,9 @@ def board_score_based_on_gamestate(gs):
                 piece_color = square[0]
                 piece_type = square[1]
                 piece_value = PIECE_SCORES[piece_type]
+               
                 position_score = PIECE_POSITION_SCORE[square][row][col]
+
                 if piece_color == "w":
                     pieces_score += piece_value + position_score
                 else:
@@ -255,3 +270,29 @@ def count_defended_pieces(board, piece_color):
 #             gs.undo_last_move()
 #         return min_score
 
+def hash_board(board):
+    return hash(str(board))
+
+class TranspositionTable:
+    def __init__(self):
+        self.table = {}
+
+    def store(self, board_hash, score, depth, flag, best_move=None):
+        self.table[board_hash] = (score, depth, flag, best_move)
+
+    def lookup(self, board_hash):
+        return self.table.get(board_hash, (None, None, None, None))
+
+    def save(self, filename):
+        with open(filename, 'wb') as file:
+            pickle.dump(self.table, file)
+        print(f"Transposition table saved to {filename}")
+
+    def load(self, filename):
+        try:
+            with open(filename, 'rb') as file:
+                self.table = pickle.load(file)
+            print(f"Transposition table loaded from {filename}")
+        except FileNotFoundError:
+            print(f"No existing transposition table found at {filename}. Starting fresh.")
+            self.table = {}

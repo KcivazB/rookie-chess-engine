@@ -14,7 +14,7 @@ MAX_FPS = 60
 IMAGE_DIR = "images"
 IMAGES = {}
 
-WHITE_IS_HUMAN = True
+WHITE_IS_HUMAN = False
 BLACK_IS_HUMAN = False
 
 
@@ -54,7 +54,7 @@ PIECE_SCORES = {
 CHECK_MATE_SCORE = 32000
 STALE_MATE_SCORE = 0
 
-PAWN_POSITION_SCORE = [
+PAWN_POSITION_SCORE_WHITE = [
     [  0,  0,  0,  0,  0,  0,  0,  0],
     [ 90, 90, 90, 90, 90, 90, 90, 90],
     [ 30, 30, 40, 60, 60, 40, 30, 30],
@@ -65,7 +65,18 @@ PAWN_POSITION_SCORE = [
     [  0,  0,  0,  0,  0,  0,  0,  0]
 ]
 
-KNIGHT_POSITION_SCORE = [
+PAWN_POSITION_SCORE_BLACK = [
+    [  0,  0,  0,  0,  0,  0,  0,  0],
+    [  5, -5,-10,  0,  0,-10, -5,  5],
+    [  0,  0,  0,-10,-10,  0,  0,  0],
+    [  5,  5, 10, 20, 20, 10,  5,  5],
+    [ 10, 10, 20, 40, 40, 20, 10, 10],
+    [ 30, 30, 40, 60, 60, 40, 30, 30],
+    [ 90, 90, 90, 90, 90, 90, 90, 90],
+    [  0,  0,  0,  0,  0,  0,  0,  0]
+]
+
+KNIGHT_POSITION_SCORE_WHITE = [
     [-50,-40,-30,-30,-30,-30,-40,-50],
     [-40,-20,  0,  5,  5,  0,-20,-40],
     [-30,  5, 10, 15, 15, 10,  5,-30],
@@ -76,7 +87,19 @@ KNIGHT_POSITION_SCORE = [
     [-50,-40,-30,-30,-30,-30,-40,-50]
 ]
 
-BISHOP_POSITION_SCORE = [
+KNIGHT_POSITION_SCORE_BLACK = [
+    [-50,-40,-30,-30,-30,-30,-40,-50],
+    [-40,-20,  0,  0,  0,  0,-20,-40],
+    [-30,  5, 10, 15, 15, 10,  5,-30],
+    [-30,  5, 15, 20, 20, 15,  5,-30],
+    [-30,  5, 15, 20, 20, 15,  5,-30],
+    [-30,  5, 10, 15, 15, 10,  5,-30],
+    [-40,-20,  0,  5,  5,  0,-20,-40],
+    [-50,-40,-30,-30,-30,-30,-40,-50]
+]
+
+
+BISHOP_POSITION_SCORE_WHITE = [
     [-20,-10,-10,-10,-10,-10,-10,-20],
     [-10,  0,  0,  0,  0,  0,  0,-10],
     [-10,  0,  5, 10, 10,  5,  0,-10],
@@ -87,7 +110,19 @@ BISHOP_POSITION_SCORE = [
     [-20,-10,-10,-10,-10,-10,-10,-20]
 ]
 
-ROOK_POSITION_SCORE = [
+BISHOP_POSITION_SCORE_BLACK = [
+    [-20,-10,-10,-10,-10,-10,-10,-20],
+    [-10,  5,  0,  0,  0,  0,  5,-10],
+    [-10, 10, 10, 10, 10, 10, 10,-10],
+    [-10,  0, 10, 15, 15, 10,  0,-10],
+    [-10,  5,  5, 10, 10,  5,  5,-10],
+    [-10,  0,  5, 10, 10,  5,  0,-10],
+    [-10,  0,  0,  0,  0,  0,  0,-10],
+    [-20,-10,-10,-10,-10,-10,-10,-20]
+]
+
+
+ROOK_POSITION_SCORE_WHITE = [
     [ 0,  0,  0,  0,  0,  0,  0,  0],
     [ 5, 20, 20, 20, 20, 20, 20,  5],
     [-5,  0,  0,  0,  0,  0,  0, -5],
@@ -98,7 +133,19 @@ ROOK_POSITION_SCORE = [
     [ 0,  0,  0,  5,  5,  0,  0,  0]
 ]
 
-QUEEN_POSITION_SCORE = [
+ROOK_POSITION_SCORE_BLACK = [
+    [  0,  0,  0,  5,  5,  0,  0,  0],
+    [ -5,  0,  0,  0,  0,  0,  0, -5],
+    [ -5,  0,  0,  0,  0,  0,  0, -5],
+    [ -5,  0,  0,  0,  0,  0,  0, -5],
+    [ -5,  0,  0,  0,  0,  0,  0, -5],
+    [ -5,  0,  0,  0,  0,  0,  0, -5],
+    [  5, 20, 20, 20, 20, 20, 20,  5],
+    [  0,  0,  0,  0,  0,  0,  0,  0]
+]
+
+
+QUEEN_POSITION_SCORE_WHITE = [
     [-20,-10,-10, -5, -5,-10,-10,-20],
     [-10,  0,  0,  0,  0,  0,  0,-10],
     [-10,  0,  5,  5,  5,  5,  0,-10],
@@ -109,7 +156,19 @@ QUEEN_POSITION_SCORE = [
     [-20,-10,-10, -5, -5,-10,-10,-20]
 ]
 
-KING_POSITION_SCORE = [
+QUEEN_POSITION_SCORE_BLACK = [
+    [-20,-10,-10, -5, -5,-10,-10,-20],
+    [-10,  0,  0,  0,  0,  0,  0,-10],
+    [-10,  0,  0,  0,  0,  0,  0,-10],
+    [ -5,  0,  5, 10, 10,  5,  0, -5],
+    [ -5,  0,  5, 10, 10,  5,  0, -5],
+    [-10,  0,  5,  5,  5,  5,  0,-10],
+    [-10,  0,  0,  0,  0,  0,  0,-10],
+    [-20,-10,-10, -5, -5,-10,-10,-20]
+]
+
+
+KING_POSITION_SCORE_WHITE = [
     [-50,-30,-30,-30,-30,-30,-30,-50],
     [-30,-30,  0,  0,  0,  0,-30,-30],
     [-30,-10, 20, 30, 30, 20,-10,-30],
@@ -120,19 +179,30 @@ KING_POSITION_SCORE = [
     [-50,-40,-30,-20,-20,-30,-40,-50]
 ]
 
+KING_POSITION_SCORE_BLACK = [
+    [-50,-40,-30,-20,-20,-30,-40,-50],
+    [-30,-20,-10,  0,  0,-10,-20,-30],
+    [-30,-10, 20, 30, 30, 20,-10,-30],
+    [-30,-10, 30, 40, 40, 30,-10,-30],
+    [-30,-10, 30, 40, 40, 30,-10,-30],
+    [-30,-10, 20, 30, 30, 20,-10,-30],
+    [-30,-30,  0,  0,  0,  0,-30,-30],
+    [-50,-30,-30,-30,-30,-30,-30,-50]
+]
+
 PIECE_POSITION_SCORE = {
-    "wP": PAWN_POSITION_SCORE,
-    "bP": PAWN_POSITION_SCORE[::-1],
-    "wR": ROOK_POSITION_SCORE,
-    "bR": ROOK_POSITION_SCORE[::-1],
-    "wN": KNIGHT_POSITION_SCORE,
-    "bN": KNIGHT_POSITION_SCORE[::-1],
-    "wB": BISHOP_POSITION_SCORE,
-    "bB": BISHOP_POSITION_SCORE[::-1],
-    "wQ": QUEEN_POSITION_SCORE,
-    "bQ": QUEEN_POSITION_SCORE[::-1],
-    "wK": KING_POSITION_SCORE,
-    "bK": KING_POSITION_SCORE[::-1]
+    "wP": PAWN_POSITION_SCORE_WHITE,
+    "bP": PAWN_POSITION_SCORE_BLACK,
+    "wR": ROOK_POSITION_SCORE_WHITE,
+    "bR": ROOK_POSITION_SCORE_BLACK,
+    "wN": KNIGHT_POSITION_SCORE_WHITE,
+    "bN": KNIGHT_POSITION_SCORE_BLACK,
+    "wB": BISHOP_POSITION_SCORE_WHITE,
+    "bB": BISHOP_POSITION_SCORE_BLACK,
+    "wQ": QUEEN_POSITION_SCORE_WHITE,
+    "bQ": QUEEN_POSITION_SCORE_BLACK,
+    "wK": KING_POSITION_SCORE_WHITE,
+    "bK": KING_POSITION_SCORE_BLACK
 }
 
 '''
