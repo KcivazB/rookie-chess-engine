@@ -157,25 +157,29 @@ def draw_move_log(screen, gs, font):
     # Draw it on the screen
     p.draw.rect(screen, THEMES[THEME]["highlighted"], move_log_rect)
 
-    #Get all the move logs and their corresponding chess notation
+    # Get all the move logs and their corresponding chess notation
     move_logs = gs.move_logs
     move_texts = []
 
     for i in range(0, len(move_logs), 2):
         move_string = str(i//2 + 1) + ". " + str(move_logs[i])
         if i+1 < len(move_logs):
-            move_string += "-" + str(move_logs[i + 1])
+            move_string += " " + str(move_logs[i + 1])
         move_texts.append(move_string)
 
-    padding = 50
+    padding = 25
     text_y = padding 
     line_spacing = 5
+    moves_per_line = 3
 
     # Add all the moves inside the new rectangle
-    for i in range(len(move_texts)):
-        text = move_texts[i]
-        text_object = font.render(text, True, THEMES[THEME]["white"])
-        text_location = move_log_rect.move(padding, text_y )
+    for i in range(0, len(move_texts), moves_per_line):
+        text_line = ""
+        for j in range(moves_per_line):
+            if i + j < len(move_texts):
+                text_line += move_texts[i + j] + "   "
+        text_object = font.render(text_line, True, THEMES[THEME]["white"])
+        text_location = move_log_rect.move(padding, text_y)
         screen.blit(text_object, text_location)
         text_y += text_object.get_height() + line_spacing
 

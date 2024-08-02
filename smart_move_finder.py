@@ -1,7 +1,9 @@
 import random, time
 import chess_engine
-from constants import MAX_DEPTH, PIECE_SCORES, PIECE_POSITION_SCORE, CHECK_MATE_SCORE, STALE_MATE_SCORE
 import pickle
+from constants import STARTING_DEPTH, ENDING_DEPTH, END_GAME_SCORE, PIECE_SCORES, PIECE_POSITION_SCORE, CASTLING_RIGHT_SCORE, CHECK_MATE_SCORE, STALE_MATE_SCORE
+
+history_table = {}
 
 def pick_random_valid_move(valid_moves):
     random_move = valid_moves[random.randint(0, len(valid_moves) - 1)]
@@ -19,7 +21,16 @@ def find_best_move(gs, valid_moves, return_queue):
 
     print(f"Transposition table length : {len(transposition_table.table)}")
 
-    find_moves_negamax_alpha_beta_with_memory(gs, valid_moves, MAX_DEPTH, -CHECK_MATE_SCORE, CHECK_MATE_SCORE, 1 if gs.white_to_move else -1, transposition_table)
+    actual_board_score = material_score_only(gs) 
+    # Get the total score of the material, if <= 2 * 1/3 TotalPerSide
+    if actual_board_score <= END_GAME_SCORE:
+        print(f"Using Ending Depth for score : {actual_board_score}")
+        original_depth = ENDING_DEPTH
+        find_moves_negamax_alpha_beta_with_memory(gs, valid_moves, ENDING_DEPTH, -CHECK_MATE_SCORE, CHECK_MATE_SCORE, 1 if gs.white_to_move else -1, transposition_table, original_depth)
+    else:
+        print(f"Using Starting Depth for score : {actual_board_score}")
+        original_depth = STARTING_DEPTH
+        find_moves_negamax_alpha_beta_with_memory(gs, valid_moves, STARTING_DEPTH, -CHECK_MATE_SCORE, CHECK_MATE_SCORE, 1 if gs.white_to_move else -1, transposition_table, original_depth)
 
     print("Search complete. Log written to negamax_log.txt")
     end_time = time.time()
@@ -49,13 +60,12 @@ Args:
 Returns:
     int: The score of the best move found.
 """
-def find_moves_negamax_alpha_beta_with_memory(gs, valid_moves, depth, alpha, beta, turn_multiplier, transposition_table):
+def find_moves_negamax_alpha_beta_with_memory(gs, valid_moves, depth, alpha, beta, turn_multiplier, transposition_table, original_depth):
     global next_moves, evaluation_count
 
     board_hash = hash_board(gs.board)
     stored_score, stored_depth, flag, stored_best_move = transposition_table.lookup(board_hash)
 
-    # Check for stored value in the transposition table (Null Window)
     if stored_depth is not None and stored_depth >= depth:
         if flag == 'exact':
             return stored_score
@@ -64,7 +74,6 @@ def find_moves_negamax_alpha_beta_with_memory(gs, valid_moves, depth, alpha, bet
         elif flag == 'upper' and stored_score < beta:
             beta = stored_score
 
-    # Base case: Return the evaluation of the board if depth is 0 or game is over
     if depth == 0 or gs.is_game_over:
         evaluation_count += 1
         score = turn_multiplier * board_score_based_on_gamestate(gs)
@@ -73,14 +82,17 @@ def find_moves_negamax_alpha_beta_with_memory(gs, valid_moves, depth, alpha, bet
     max_score = -CHECK_MATE_SCORE
     best_moves = []
 
-    # Iterate through all valid moves
-    for move in valid_moves:
+    # Order moves based on the categories
+    hash_move = stored_best_move
+    pv_move = next_moves[0] if next_moves else None
+    ordered_moves = order_moves(valid_moves, depth, hash_move, transposition_table.killer_moves, pv_move, gs)
+
+    for move in ordered_moves:
         gs.make_move(move)
         next_valid_moves = gs.get_all_valid_moves()
-        score = -find_moves_negamax_alpha_beta_with_memory(gs, next_valid_moves, depth - 1, -beta, -alpha, -turn_multiplier, transposition_table)
+        score = -find_moves_negamax_alpha_beta_with_memory(gs, next_valid_moves, depth - 1, -beta, -alpha, -turn_multiplier, transposition_table, original_depth)
         gs.undo_last_move()
 
-        # Update the best score and best moves list
         if score > max_score:
             max_score = score
             best_moves = [move]
@@ -89,10 +101,14 @@ def find_moves_negamax_alpha_beta_with_memory(gs, valid_moves, depth, alpha, bet
 
         alpha = max(alpha, score)
         if alpha >= beta:
+            if depth in transposition_table.killer_moves:
+                if not transposition_table.killer_moves[depth][0]:
+                    transposition_table.killer_moves[depth][0] = move
+                else:
+                    transposition_table.killer_moves[depth][1] = move
             break
 
-    # Store the result in the transposition table
-    if depth == MAX_DEPTH:
+    if depth == original_depth:
         if max_score <= alpha:
             flag = 'upper'
         elif max_score >= beta:
@@ -102,18 +118,157 @@ def find_moves_negamax_alpha_beta_with_memory(gs, valid_moves, depth, alpha, bet
         transposition_table.store(board_hash, max_score, depth, flag, best_moves[0] if best_moves else None)
         next_moves = best_moves
 
+    # Update history with the move and its score
+    for move in ordered_moves:
+        update_history(move, 1)  # Adjust the score as needed based on your heuristic
+
     return max_score
 
 
+'''
+Sort_moves function to prioritize killer moves.
+Base thought is that, moves pruned giving a very bad score are indeed a very good branch for the other
+'''
+def order_moves(moves, depth, hash_move, killer_moves, pv_move, gs):
+    ordered_moves = []
+
+    # Add PV move
+    if pv_move in moves:
+        ordered_moves.append(pv_move)
+        moves.remove(pv_move)
+
+    # Add hash move
+    if hash_move and hash_move in moves:
+        ordered_moves.append(hash_move)
+        moves.remove(hash_move)
+
+    # Categorize captures and promotions
+    winning_captures = []
+    equal_captures = []
+    for move in moves:
+        if is_capture(move):
+            if is_winning_capture(move, gs):
+                winning_captures.append(move)
+            else:
+                equal_captures.append(move)
+
+    # Add winning captures
+    ordered_moves.extend(winning_captures)
+
+    # Add equal captures
+    ordered_moves.extend(equal_captures)
+
+    # Add killer moves
+    if depth in killer_moves:
+        killer_move1, killer_move2 = killer_moves[depth]
+        if killer_move1 in moves:
+            ordered_moves.append(killer_move1)
+            moves.remove(killer_move1)
+        if killer_move2 in moves:
+            ordered_moves.append(killer_move2)
+            moves.remove(killer_move2)
+
+    # Sort remaining non-captures by history heuristic
+    non_captures = [move for move in moves if not is_capture(move)]
+    sorted_non_captures = sorted(non_captures, key=lambda move: history_heuristic(move), reverse=True)
+
+    # Add sorted non-captures
+    ordered_moves.extend(sorted_non_captures)
+
+    # Add losing captures
+    losing_captures = [move for move in moves if is_capture(move) and not is_winning_capture(move, gs)]
+    ordered_moves.extend(losing_captures)
+
+    return ordered_moves
 
 
-# def move_heuristic(gs, move):
-#     # Placeholder for actual heuristic function
-#     # Example: prioritize captures, checks, or other heuristics
-#     gs.make_move(move)
-#     score = board_score_based_on_gamestate(gs)
-#     gs.undo_last_move()
-#     return score
+def is_capture(move):
+    return move.piece_captured != "--"
+
+def evaluate_capture(move, gs):
+    """
+    Evaluate the value of a capture move.
+
+    Args:
+        move: The move being evaluated.
+        gs: The game state object containing the board and game status.
+
+    Returns:
+        int: The evaluation score of the capture move.
+    """
+    # Make the move to evaluate the board state after the capture
+    gs.make_move(move)
+    
+    # Get the captured piece value
+    captured_piece = move.piece_captured
+    captured_value = PIECE_SCORES[captured_piece[1]] if captured_piece else 0
+    
+    # Get the piece value of the capturing piece
+    capturing_piece = gs.board[move.end_row][move.end_col]
+    capturing_value = PIECE_SCORES[capturing_piece[1]] if capturing_piece != "--" else 0
+
+    # Undo the move to revert the board state
+    gs.undo_last_move()
+    
+    # Calculate the evaluation score
+    capture_value = captured_value - capturing_value
+    
+    return capture_value
+
+def is_winning_capture(move, gs):
+    """
+    Determine if the capture move results in a significant material gain.
+    
+    Args:
+        move: The capture move being evaluated.
+        gs: The game state object.
+    
+    Returns:
+        bool: True if the capture is winning, False otherwise.
+    """
+    # Calculate the capture value
+    capture_value = evaluate_capture(move, gs)
+    
+    # Define thresholds for winning and medium captures
+    WINNING_CAPTURE_THRESHOLD = 2500
+    MEDIUM_CAPTURE_THRESHOLD = 1000
+
+    if capture_value >= WINNING_CAPTURE_THRESHOLD:
+        return True
+    elif capture_value >= MEDIUM_CAPTURE_THRESHOLD:
+        return False
+    else:
+        return False
+
+
+
+def update_history(move, score):
+    """
+    Update the history heuristic for a move based on its score.
+    
+    Args:
+        move: The move to update.
+        score: The score or count indicating the effectiveness of the move.
+    """
+    move_key = str(move)  # Convert move to a string representation if necessary
+    if move_key in history_table:
+        history_table[move_key] += score
+    else:
+        history_table[move_key] = score
+
+def history_heuristic(move):
+    """
+    Return a heuristic value for non-capture moves based on historical performance.
+    
+    Args:
+        move: The move being evaluated.
+    
+    Returns:
+        int: The heuristic score based on historical data.
+    """
+    move_key = str(move)
+    return history_table.get(move_key, 0)
+
 
 '''
 Evaluate the board score based on gameState
@@ -138,7 +293,7 @@ def board_score_based_on_gamestate(gs):
                 piece_color = square[0]
                 piece_type = square[1]
                 piece_value = PIECE_SCORES[piece_type]
-               
+                
                 position_score = PIECE_POSITION_SCORE[square][row][col]
 
                 if piece_color == "w":
@@ -150,11 +305,28 @@ def board_score_based_on_gamestate(gs):
                 if (row, col) in [(3, 3), (3, 4), (4, 3), (4, 4)]:
                     central_control_score += 10 if piece_color == "w" else -10
 
+
+
     # Count attacked and defended pieces
     attacked_pieces_score = count_attacked_pieces(gs.board, 'w') - count_attacked_pieces(gs.board, 'b')
     defended_pieces_score = count_defended_pieces(gs.board, 'w') - count_defended_pieces(gs.board, 'b')
 
-    return score + pieces_score + central_control_score + attacked_pieces_score + defended_pieces_score
+    # Count ennemy caslting rights 
+    castling_rights_score = count_ennemy_castling_rights(gs)
+    return score + pieces_score + central_control_score + attacked_pieces_score + defended_pieces_score + castling_rights_score
+
+#Calculate global material board score
+def material_score_only(gs):
+    material_value = 0
+    for row in range(len(gs.board)):
+        for col in range(len(gs.board[row])):
+            square = gs.board[row][col]
+            if square != "--":
+                piece_type = square[1]
+                piece_value = PIECE_SCORES[piece_type]
+
+                material_value += piece_value 
+    return material_value
 
 def count_attacked_pieces(board, piece_color):
     """
@@ -228,6 +400,19 @@ def count_defended_pieces(board, piece_color):
 
     return defended_pieces_count
 
+def count_ennemy_castling_rights(gs):
+    score = 0
+    if not gs.white_to_move: 
+        if gs.current_castling_rights.wKs or gs.current_castling_rights.wQs:
+            score -= CASTLING_RIGHT_SCORE            
+
+    else : 
+        if gs.current_castling_rights.bKs or gs.current_castling_rights.bQs : 
+            score -= CASTLING_RIGHT_SCORE
+
+    return score
+
+
 # '''
 # Recursively implemented find_best_move_material_based -- Using minMax
 # '''
@@ -273,12 +458,20 @@ def count_defended_pieces(board, piece_color):
 def hash_board(board):
     return hash(str(board))
 
+
 class TranspositionTable:
     def __init__(self):
         self.table = {}
+        self.killer_moves = {}
 
     def store(self, board_hash, score, depth, flag, best_move=None):
         self.table[board_hash] = (score, depth, flag, best_move)
+        if best_move and depth not in self.killer_moves:
+            self.killer_moves[depth] = [None, None]
+        if best_move:
+            # Update killer moves
+            self.killer_moves[depth][1] = self.killer_moves[depth][0]
+            self.killer_moves[depth][0] = best_move
 
     def lookup(self, board_hash):
         return self.table.get(board_hash, (None, None, None, None))

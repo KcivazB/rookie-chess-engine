@@ -40,7 +40,8 @@ PIECES_SYMBOLS = {
 '''
 AI PART 
 '''
-MAX_DEPTH = 4
+STARTING_DEPTH = 4
+ENDING_DEPTH = 5
 
 PIECE_SCORES = {
     "K": 0,
@@ -51,8 +52,13 @@ PIECE_SCORES = {
     "Q": 2538
 }
 
+CASTLING_RIGHT_SCORE = 104
 CHECK_MATE_SCORE = 32000
 STALE_MATE_SCORE = 0
+
+# Set the end game as being when only a third of the 
+SIDE_BASE_SCORE = 9966
+END_GAME_SCORE =  2 * SIDE_BASE_SCORE / 3
 
 PAWN_POSITION_SCORE_WHITE = [
     [  0,  0,  0,  0,  0,  0,  0,  0],
