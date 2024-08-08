@@ -31,8 +31,15 @@ def main(fen):
     screen.fill(p.Color("white"))
     move_log_font = p.font.SysFont("Arial", 12, False, False)
 
+    sounds = {
+        "move_sound" : p.mixer.Sound('assets/sounds/move-self.mp3'),
+        "capture_sound" :  p.mixer.Sound('assets/sounds/capture.mp3'),
+        "castle_sound" : p.mixer.Sound('assets/sounds/castle.mp3'),
+        "check_sound" : p.mixer.Sound('assets/sounds/move-check.mp3'),
+        "promotion_sound" : p.mixer.Sound('assets/sounds/promote.mp3')
+    }
 
-    gs = chess_engine.GameState(fen)
+    gs = chess_engine.GameState(sounds, fen)
     # print(f"Initial GameState:")
     gs.print_self_data()
 
@@ -44,6 +51,7 @@ def main(fen):
 
     load_images()
     running = True
+
     valid_moves_for_selected_piece = []
 
 
@@ -96,7 +104,7 @@ def main(fen):
                         ai_thinking = False
 
                 if e.key == p.K_r: # If R is pressed, Reinitialize the whole game state
-                    gs = chess_engine.GameState(fen)
+                    gs = chess_engine.GameState(sounds, fen)
                     valid_moves = gs.get_all_valid_moves()
                     move_was_made = True
                     square_selected = ()

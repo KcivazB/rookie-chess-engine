@@ -11,7 +11,7 @@ SQUARES = 8**2
 SQ_SIZE = BOARD_HEIGHT // DIMENSION 
 MAX_FPS = 60
 
-IMAGE_DIR = "images"
+IMAGE_DIR = "assets/images"
 IMAGES = {}
 
 WHITE_IS_HUMAN = False
@@ -40,8 +40,8 @@ PIECES_SYMBOLS = {
 '''
 AI PART 
 '''
-STARTING_DEPTH = 4
-ENDING_DEPTH = 5
+STARTING_DEPTH = 2
+ENDING_DEPTH = 6
 
 PIECE_SCORES = {
     "K": 0,
@@ -55,6 +55,10 @@ PIECE_SCORES = {
 CASTLING_RIGHT_SCORE = 104
 CHECK_MATE_SCORE = 32000
 STALE_MATE_SCORE = 0
+
+# Define thresholds for winning and medium captures
+WINNING_CAPTURE_THRESHOLD = 2500
+MEDIUM_CAPTURE_THRESHOLD = 1000
 
 # Set the end game as being when only a third of the 
 SIDE_BASE_SCORE = 9966
