@@ -259,9 +259,3 @@ def draw_pieces(screen, game_state):
                 piece_square = p.Rect(col * SQ_SIZE, row * SQ_SIZE, SQ_SIZE, SQ_SIZE)
                 screen.blit(IMAGES[piece], piece_square)
 
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Start a chess game with an optional FEN string.')
-    parser.add_argument('--FEN', type=str, help='The FEN string to set up the board.')
-    args = parser.parse_args()
-
-    main(args.FEN)

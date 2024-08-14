@@ -1,7 +1,7 @@
 import random
 import time
 import pickle
-from constants import STARTING_DEPTH, ENDING_DEPTH, END_GAME_SCORE, PIECE_SCORES, PIECE_POSITION_SCORE, CASTLING_RIGHT_SCORE, CHECK_MATE_SCORE, STALE_MATE_SCORE
+from constants import STARTING_DEPTH, ENDING_DEPTH, END_GAME_SCORE, PIECE_SCORES, PIECE_POSITION_SCORE, CASTLING_RIGHT_SCORE, CHECK_MATE_SCORE, STALE_MATE_SCORE, MOVE_SEARCH_TIME_LIMIT
 
 history_table = {}
 
@@ -10,32 +10,43 @@ def pick_random_valid_move(valid_moves):
     print("Random Move from pick_random_valid_move: " + str(random_move))
     return random_move
 
-def find_best_move(gs, valid_moves, return_queue):
+def find_best_move(gs, valid_moves, return_queue, time_limit=5.0):
     global next_moves, evaluation_count
     evaluation_count = 0
     next_moves = []
     start_time = time.time()
+    
+    best_move = None
 
     actual_board_score = material_score_only(gs) 
-    if actual_board_score <= END_GAME_SCORE:
-        print(f"Using Ending Depth for score: {actual_board_score}")
-        original_depth = ENDING_DEPTH
-        find_moves_negamax_alpha_beta(gs, valid_moves, ENDING_DEPTH, -CHECK_MATE_SCORE, CHECK_MATE_SCORE, 1 if gs.white_to_move else -1, original_depth)
-    else:
-        print(f"Using Starting Depth for score: {actual_board_score}")
-        original_depth = STARTING_DEPTH
-        find_moves_negamax_alpha_beta(gs, valid_moves, STARTING_DEPTH, -CHECK_MATE_SCORE, CHECK_MATE_SCORE, 1 if gs.white_to_move else -1, original_depth)
+    depth = 1
+    
+    while True:
+        time_elapsed = time.time() - start_time
+        if time_elapsed >= time_limit:
+            print(f"Time limit reached at depth {depth-1}. Returning best move found.")
+            break
+        
+        print(f"Searching at depth: {depth}")
+        find_moves_negamax_alpha_beta(gs, valid_moves, depth, -CHECK_MATE_SCORE, CHECK_MATE_SCORE, 1 if gs.white_to_move else -1)
+        
+        if time.time() - start_time >= time_limit:
+            print(f"Time limit reached during search at depth {depth}.")
+            break
 
-    print("Search complete. Log written to negamax_log.txt")
-    end_time = time.time()
-    elapsed_time = end_time - start_time
+        # The best move found at this depth
+        best_move = next_moves[0] if next_moves else best_move
+        depth += 1
+
+    elapsed_time = time.time() - start_time
     print(f"Potential best moves count: {len(next_moves)}")
     print(f"Total possibilities evaluated: {evaluation_count} in {elapsed_time:.2f}s")
-
-    best_move = pick_random_valid_move(next_moves)
+    print(f"Max depth reached: {depth-1}")
+    
     return_queue.put(best_move)
+    
 
-def find_moves_negamax_alpha_beta(gs, valid_moves, depth, alpha, beta, turn_multiplier, original_depth):
+def find_moves_negamax_alpha_beta(gs, valid_moves, depth, alpha, beta, turn_multiplier):
     global next_moves, evaluation_count
 
     if depth == 0 or gs.is_game_over:
@@ -51,7 +62,7 @@ def find_moves_negamax_alpha_beta(gs, valid_moves, depth, alpha, beta, turn_mult
     for move in ordered_moves:
         gs.make_move(move)
         next_valid_moves = gs.get_all_valid_moves()
-        score = -find_moves_negamax_alpha_beta(gs, next_valid_moves, depth - 1, -beta, -alpha, -turn_multiplier, original_depth)
+        score = -find_moves_negamax_alpha_beta(gs, next_valid_moves, depth - 1, -beta, -alpha, -turn_multiplier)
         gs.undo_last_move()
 
         if score > max_score:
@@ -62,6 +73,7 @@ def find_moves_negamax_alpha_beta(gs, valid_moves, depth, alpha, beta, turn_mult
 
         alpha = max(alpha, score)
         if alpha >= beta:
+            # Alpha-beta cutoff
             if depth in history_table:
                 if not history_table[depth][0]:
                     history_table[depth][0] = move
@@ -69,8 +81,8 @@ def find_moves_negamax_alpha_beta(gs, valid_moves, depth, alpha, beta, turn_mult
                     history_table[depth][1] = move
             break
 
-    if depth == original_depth:
-        next_moves = best_moves
+    # Update the best moves found at this depth
+    next_moves = best_moves
 
     # Update history with the move and its score
     for move in ordered_moves:
